@@ -5,6 +5,7 @@ A modern React Native Expo app that helps you organize your wardrobe and create 
 ## 🌟 Features
 
 ### Core Functionality
+
 - **Smart Wardrobe Management** - Organize and categorize your clothing items
 - **AI-Powered Outfit Suggestions** - Get personalized style recommendations
 - **Weather-Based Recommendations** - Outfit suggestions based on current weather
@@ -12,6 +13,7 @@ A modern React Native Expo app that helps you organize your wardrobe and create 
 - **Style Analytics** - Track your style preferences and wardrobe diversity
 
 ### Key Screens
+
 - **Home Dashboard** - Daily outfit suggestions and quick stats
 - **Wardrobe** - Browse, search, and manage your clothing items
 - **Outfit Planner** - Calendar-based outfit planning
@@ -19,6 +21,7 @@ A modern React Native Expo app that helps you organize your wardrobe and create 
 - **Profile** - User profile, statistics, and settings
 
 ### Technical Features
+
 - **Redux State Management** - Centralized state with Redux Toolkit
 - **RTK Query** - Ready for API integration
 - **Modern UI/UX** - Material Design 3 with custom theming
@@ -29,6 +32,7 @@ A modern React Native Expo app that helps you organize your wardrobe and create 
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - Node.js (v16 or higher)
 - npm or yarn
 - Expo CLI
@@ -37,12 +41,14 @@ A modern React Native Expo app that helps you organize your wardrobe and create 
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/yourusername/virtual-wardrobe.git
    cd virtual-wardrobe
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    # or
@@ -50,6 +56,7 @@ A modern React Native Expo app that helps you organize your wardrobe and create 
    ```
 
 3. **Start the development server**
+
    ```bash
    npm start
    # or
@@ -64,23 +71,27 @@ A modern React Native Expo app that helps you organize your wardrobe and create 
 ## 📱 Screenshots
 
 ### Authentication
+
 - Modern login/register screens with social authentication options
 - Forgot password flow with email verification
 - Demo mode for testing without account creation
 
 ### Home Dashboard
+
 - Weather-based outfit suggestions
 - Quick stats and wardrobe insights
 - Recent activity feed
 - Floating action button for quick item addition
 
 ### Wardrobe Management
+
 - Grid/list view with search and filtering
 - Category-based organization
 - Favorite items tracking
 - High-quality item images
 
 ### AI Stylist
+
 - Personalized outfit recommendations
 - Style score and diversity metrics
 - Wardrobe insights and analytics
@@ -132,13 +143,16 @@ src/
 ## 🔧 Configuration
 
 ### Environment Variables
+
 Create a `.env` file in the root directory:
+
 ```env
 EXPO_PUBLIC_API_URL=your_api_url_here
 EXPO_PUBLIC_WEATHER_API_KEY=your_weather_api_key
 ```
 
 ### App Configuration
+
 - Update `app.json` for app metadata
 - Configure `expo.json` for build settings
 - Customize theme in `src/theme/theme.js`
@@ -173,6 +187,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support
 
 If you have any questions or need help, please:
+
 - Open an issue on GitHub
 - Contact: your-email@example.com
 
