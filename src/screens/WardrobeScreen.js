@@ -347,6 +347,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 16,
     paddingBottom: 8,
+    paddingTop: 60,
   },
   searchbar: {
     flex: 1,

@@ -328,6 +328,7 @@ const styles = StyleSheet.create({
   header: {
     padding: 16,
     paddingBottom: 8,
+    paddingTop: 60,
   },
   segmentedButtons: {
     backgroundColor: "white",
