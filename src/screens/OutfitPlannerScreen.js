@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import {
   View,
   ScrollView,
@@ -7,24 +7,22 @@ import {
   TouchableOpacity,
   Image,
   FlatList,
+  Text as RNText,
 } from "react-native";
 import {
   Card,
   Title,
-  Paragraph,
   Button,
   Chip,
-  Surface,
   Text,
   FAB,
-  SegmentedButtons,
+  Surface,
   IconButton,
-  Badge,
 } from "react-native-paper";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { useSelector, useDispatch } from "react-redux";
 import { addOutfit } from "../store/slices/outfitSlice";
+import { theme } from "../theme/theme";
 
 const { width } = Dimensions.get("window");
 
@@ -73,79 +71,51 @@ const OutfitPlannerScreen = ({ navigation }) => {
   };
 
   const OutfitCard = ({ outfit }) => (
-    <Card style={styles.outfitCard}>
-      <TouchableOpacity
-        onPress={() => navigation.navigate("OutfitDetail", { outfit })}
-      >
-        <View style={styles.outfitHeader}>
-          <View>
-            <Title style={styles.outfitName}>{outfit.name}</Title>
-            <Text style={styles.outfitDate}>
-              {new Date(outfit.createdAt).toLocaleDateString()}
-            </Text>
+    <TouchableOpacity
+      style={styles.minimalOutfitCard}
+      onPress={() => navigation.navigate("OutfitDetail", { outfit })}
+      activeOpacity={0.7}
+    >
+      <View style={styles.outfitPreview}>
+        {outfit.items.slice(0, 3).map((item, index) => (
+          <Image
+            key={index}
+            source={{ uri: item.image }}
+            style={styles.minimalItemImage}
+          />
+        ))}
+        {outfit.items.length > 3 && (
+          <View style={styles.moreIndicator}>
+            <Text style={styles.moreCount}>+{outfit.items.length - 3}</Text>
           </View>
-          <View style={styles.outfitActions}>
-            <IconButton
-              icon="heart-outline"
-              size={20}
-              onPress={() => {
-                /* Toggle favorite */
-              }}
-            />
-            <IconButton
-              icon="more-vert"
-              size={20}
-              onPress={() => {
-                /* Show menu */
-              }}
-            />
-          </View>
-        </View>
-        <View style={styles.outfitItems}>
-          {outfit.items.slice(0, 4).map((item, index) => (
-            <Image
-              key={index}
-              source={{ uri: item.image }}
-              style={styles.outfitItemImage}
-            />
-          ))}
-          {outfit.items.length > 4 && (
-            <View style={styles.moreItemsOverlay}>
-              <Text style={styles.moreItemsText}>
-                +{outfit.items.length - 4}
-              </Text>
-            </View>
-          )}
-        </View>
-        <View style={styles.outfitTags}>
-          <Chip mode="outlined" compact style={styles.outfitTag}>
-            {outfit.occasion}
-          </Chip>
-          <Chip mode="outlined" compact style={styles.outfitTag}>
-            {outfit.temperature}°C
-          </Chip>
-        </View>
-      </TouchableOpacity>
-    </Card>
+        )}
+      </View>
+      <View style={styles.outfitInfo}>
+        <Text style={styles.minimalOutfitName}>{outfit.name}</Text>
+        <Text style={styles.minimalOutfitDate}>
+          {new Date(outfit.createdAt).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+          })}
+        </Text>
+      </View>
+    </TouchableOpacity>
   );
 
   const CalendarView = () => (
-    <View style={styles.calendarContainer}>
-      <Text style={styles.sectionTitle}>This Week</Text>
-      <View style={styles.calendarGrid}>
-        {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day, index) => (
+    <View style={styles.minimalCalendar}>
+      <View style={styles.calendarWeek}>
+        {["M", "T", "W", "T", "F", "S", "S"].map((day, index) => (
           <TouchableOpacity
-            key={day}
-            style={styles.calendarDay}
+            key={`day-${index}`}
+            style={styles.minimalDay}
             onPress={() => {
               /* Navigate to day planner */
             }}
           >
-            <Text style={styles.calendarDayName}>{day}</Text>
-            <Text style={styles.calendarDayNumber}>{index + 1}</Text>
-            <View style={styles.calendarDayOutfit}>
-              {/* Placeholder for outfit preview */}
-            </View>
+            <Text style={styles.dayInitial}>{day}</Text>
+            <Text style={styles.dayNumber}>{index + 1}</Text>
+            <View style={styles.dayDot} />
           </TouchableOpacity>
         ))}
       </View>
@@ -153,106 +123,92 @@ const OutfitPlannerScreen = ({ navigation }) => {
   );
 
   const OutfitCreator = () => (
-    <View style={styles.outfitCreator}>
-      <View style={styles.outfitCreatorHeader}>
-        <Title>Create New Outfit</Title>
-        <View style={styles.outfitCreatorActions}>
-          <Button
-            mode="outlined"
-            onPress={() => setIsCreatingOutfit(false)}
-            style={styles.cancelButton}
-          >
-            Cancel
-          </Button>
-          <Button
-            mode="contained"
-            onPress={saveOutfit}
-            disabled={selectedItems.length === 0}
+    <View style={styles.minimalCreator}>
+      <View style={styles.creatorHeader}>
+        <TouchableOpacity onPress={() => setIsCreatingOutfit(false)}>
+          <Ionicons name="close" size={24} color={theme.colors.onSurface} />
+        </TouchableOpacity>
+        <Text style={styles.creatorTitle}>New Outfit</Text>
+        <TouchableOpacity
+          onPress={saveOutfit}
+          disabled={selectedItems.length === 0}
+        >
+          <Text
+            style={[
+              styles.saveButton,
+              selectedItems.length === 0 && styles.saveButtonDisabled,
+            ]}
           >
             Save
-          </Button>
-        </View>
+          </Text>
+        </TouchableOpacity>
       </View>
 
-      {/* Selected Items Preview */}
       {selectedItems.length > 0 && (
-        <Card style={styles.selectedItemsCard}>
-          <Card.Content>
-            <Text style={styles.selectedItemsTitle}>Selected Items</Text>
-            <View style={styles.selectedItemsList}>
+        <View style={styles.selectedPreview}>
+          <Text style={styles.selectedLabel}>
+            Selected ({selectedItems.length})
+          </Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={styles.selectedItems}>
               {selectedItems.map((item, index) => (
-                <View key={index} style={styles.selectedItem}>
+                <TouchableOpacity
+                  key={index}
+                  style={styles.selectedItem}
+                  onPress={() => addItemToOutfit(item)}
+                >
                   <Image
                     source={{ uri: item.image }}
                     style={styles.selectedItemImage}
                   />
-                  <Text style={styles.selectedItemName}>{item.name}</Text>
-                  <IconButton
-                    icon="close"
-                    size={16}
-                    onPress={() => addItemToOutfit(item)}
-                    style={styles.removeItemButton}
-                  />
-                </View>
-              ))}
-            </View>
-          </Card.Content>
-        </Card>
-      )}
-
-      {/* Category Selection */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View style={styles.categoryTabs}>
-          {Object.entries(outfitCategories).map(([category, items]) => (
-            <TouchableOpacity
-              key={category}
-              style={styles.categoryTab}
-              onPress={() => {
-                /* Scroll to category */
-              }}
-            >
-              <Text style={styles.categoryTabText}>
-                {category.charAt(0).toUpperCase() + category.slice(1)}
-              </Text>
-              <Badge style={styles.categoryBadge}>{items.length}</Badge>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </ScrollView>
-
-      {/* Items Grid */}
-      <View style={styles.itemsGrid}>
-        {Object.entries(outfitCategories).map(([category, items]) => (
-          <View key={category} style={styles.categorySection}>
-            <Text style={styles.categoryTitle}>
-              {category.charAt(0).toUpperCase() + category.slice(1)} (
-              {items.length})
-            </Text>
-            <View style={styles.categoryItems}>
-              {items.map((item) => (
-                <TouchableOpacity
-                  key={item.id}
-                  onPress={() => addItemToOutfit(item)}
-                  style={[
-                    styles.itemCard,
-                    selectedItems.find((selected) => selected.id === item.id) &&
-                      styles.itemCardSelected,
-                  ]}
-                >
-                  <Image
-                    source={{ uri: item.image }}
-                    style={styles.itemImage}
-                  />
-                  {selectedItems.find(
-                    (selected) => selected.id === item.id
-                  ) && (
-                    <View style={styles.selectedOverlay}>
-                      <Ionicons name="checkmark" size={20} color="white" />
-                    </View>
-                  )}
+                  <View style={styles.removeOverlay}>
+                    <Ionicons name="close" size={16} color="white" />
+                  </View>
                 </TouchableOpacity>
               ))}
             </View>
+          </ScrollView>
+        </View>
+      )}
+
+      <View style={styles.categoryGrid}>
+        {Object.entries(outfitCategories).map(([category, items]) => (
+          <View key={category} style={styles.categorySection}>
+            <Text style={styles.categoryLabel}>
+              {category.charAt(0).toUpperCase() + category.slice(1)}
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.categoryScroll}
+            >
+              <View style={styles.categoryItems}>
+                {items.map((item) => (
+                  <TouchableOpacity
+                    key={item.id}
+                    onPress={() => addItemToOutfit(item)}
+                    style={[
+                      styles.minimalItemCard,
+                      selectedItems.find(
+                        (selected) => selected.id === item.id
+                      ) && styles.minimalItemCardSelected,
+                    ]}
+                  >
+                    <Image
+                      source={{ uri: item.image }}
+                      style={styles.minimalItemImage}
+                    />
+                    {selectedItems.find(
+                      (selected) => selected.id === item.id
+                    ) && (
+                      <View style={styles.minimalSelectedOverlay}>
+                        <Ionicons name="checkmark" size={16} color="white" />
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
           </View>
         ))}
       </View>
@@ -260,47 +216,76 @@ const OutfitPlannerScreen = ({ navigation }) => {
   );
 
   const OutfitsList = () => (
-    <View style={styles.outfitsList}>
+    <View style={styles.minimalOutfitsList}>
       <View style={styles.outfitsHeader}>
-        <Text style={styles.sectionTitle}>My Outfits</Text>
-        <Button
-          mode="outlined"
+        <Text style={styles.minimalSectionTitle}>Outfits</Text>
+        <TouchableOpacity
+          style={styles.newOutfitButton}
           onPress={() => setIsCreatingOutfit(true)}
-          icon="plus"
         >
-          New Outfit
-        </Button>
+          <Ionicons name="add" size={20} color={theme.colors.primary} />
+        </TouchableOpacity>
       </View>
       <FlatList
         data={outfits}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => <OutfitCard outfit={item} />}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.outfitsListContent}
+        contentContainerStyle={styles.outfitsGrid}
+        numColumns={2}
+        columnWrapperStyle={styles.outfitRow}
       />
     </View>
   );
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <SegmentedButtons
-          value={selectedView}
-          onValueChange={setSelectedView}
-          buttons={[
-            { value: "calendar", label: "Calendar", icon: "calendar" },
-            { value: "outfits", label: "Outfits", icon: "shirt" },
-          ]}
-          style={styles.segmentedButtons}
-        />
-      </View>
+    <View style={styles.minimalContainer}>
+      {!isCreatingOutfit && (
+        <View style={styles.minimalHeader}>
+          <Text style={styles.headerTitle}>Outfit Planner</Text>
+          <View style={styles.headerTabs}>
+            <TouchableOpacity
+              style={[
+                styles.tab,
+                selectedView === "calendar" && styles.activeTab,
+              ]}
+              onPress={() => setSelectedView("calendar")}
+            >
+              <Ionicons
+                name="calendar-outline"
+                size={18}
+                color={
+                  selectedView === "calendar"
+                    ? theme.colors.primary
+                    : theme.colors.onSurfaceVariant
+                }
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.tab,
+                selectedView === "outfits" && styles.activeTab,
+              ]}
+              onPress={() => setSelectedView("outfits")}
+            >
+              <Ionicons
+                name="shirt-outline"
+                size={18}
+                color={
+                  selectedView === "outfits"
+                    ? theme.colors.primary
+                    : theme.colors.onSurfaceVariant
+                }
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
 
-      {/* Content */}
       {isCreatingOutfit ? (
         <OutfitCreator />
       ) : selectedView === "calendar" ? (
-        <View style={styles.content}>
+        <View style={styles.minimalContent}>
           <CalendarView />
           <OutfitsList />
         </View>
@@ -308,248 +293,268 @@ const OutfitPlannerScreen = ({ navigation }) => {
         <OutfitsList />
       )}
 
-      {/* Floating Action Button */}
       {!isCreatingOutfit && (
-        <FAB
-          icon="plus"
-          style={styles.fab}
+        <TouchableOpacity
+          style={styles.minimalFAB}
           onPress={() => setIsCreatingOutfit(true)}
-        />
+        >
+          <Ionicons name="add" size={24} color="white" />
+        </TouchableOpacity>
       )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  // Main container
+  minimalContainer: {
     flex: 1,
-    backgroundColor: "#f8fafc",
+    backgroundColor: theme.colors.background,
   },
-  header: {
-    padding: 16,
-    paddingBottom: 8,
+
+  // Header styles
+  minimalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: theme.spacing.md,
     paddingTop: 60,
+    paddingBottom: theme.spacing.sm,
+    backgroundColor: theme.colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
   },
-  segmentedButtons: {
-    backgroundColor: "white",
+  headerTitle: {
+    ...theme.fonts.titleMedium,
+    color: theme.colors.onSurface,
   },
-  content: {
+  headerTabs: {
+    flexDirection: "row",
+    backgroundColor: theme.colors.surfaceVariant,
+    borderRadius: theme.borderRadius.md,
+    padding: 2,
+  },
+  tab: {
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.sm,
+  },
+  activeTab: {
+    backgroundColor: theme.colors.surface,
+  },
+
+  // Content styles
+  minimalContent: {
     flex: 1,
   },
-  calendarContainer: {
-    padding: 16,
+
+  // Calendar styles
+  minimalCalendar: {
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.lg,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#1f2937",
-    marginBottom: 16,
-  },
-  calendarGrid: {
+  calendarWeek: {
     flexDirection: "row",
     justifyContent: "space-between",
   },
-  calendarDay: {
+  minimalDay: {
     alignItems: "center",
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: "white",
-    minWidth: 40,
-    elevation: 2,
-  },
-  calendarDayName: {
-    fontSize: 12,
-    color: "#6b7280",
-    marginBottom: 4,
-  },
-  calendarDayNumber: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#1f2937",
-    marginBottom: 8,
-  },
-  calendarDayOutfit: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "#e5e7eb",
-  },
-  outfitsList: {
     flex: 1,
+  },
+  dayInitial: {
+    ...theme.fonts.bodySmall,
+    color: theme.colors.onSurfaceVariant,
+    marginBottom: theme.spacing.xs,
+  },
+  dayNumber: {
+    ...theme.fonts.bodyMedium,
+    color: theme.colors.onSurface,
+    marginBottom: theme.spacing.xs,
+  },
+  dayDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: theme.colors.primary,
+  },
+
+  // Outfit list styles
+  minimalOutfitsList: {
+    flex: 1,
+    paddingHorizontal: theme.spacing.md,
   },
   outfitsHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 16,
+    paddingVertical: theme.spacing.md,
   },
-  outfitsListContent: {
-    padding: 16,
-    paddingTop: 0,
+  minimalSectionTitle: {
+    ...theme.fonts.titleMedium,
+    color: theme.colors.onSurface,
   },
-  outfitCard: {
-    marginBottom: 16,
-    elevation: 2,
-  },
-  outfitHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 16,
-    paddingBottom: 8,
-  },
-  outfitName: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  outfitDate: {
-    fontSize: 12,
-    color: "#6b7280",
-  },
-  outfitActions: {
-    flexDirection: "row",
-  },
-  outfitItems: {
-    flexDirection: "row",
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-  },
-  outfitItemImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 8,
-    marginRight: 8,
-  },
-  moreItemsOverlay: {
-    width: 50,
-    height: 50,
-    borderRadius: 8,
-    backgroundColor: "#6b7280",
+  newOutfitButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: theme.colors.primaryContainer,
     justifyContent: "center",
     alignItems: "center",
   },
-  moreItemsText: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "bold",
+  outfitsGrid: {
+    paddingBottom: 100,
   },
-  outfitTags: {
+  outfitRow: {
+    justifyContent: "space-between",
+    marginBottom: theme.spacing.md,
+  },
+
+  // Minimal outfit card
+  minimalOutfitCard: {
+    width: (width - theme.spacing.md * 3) / 2,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+  },
+  outfitPreview: {
     flexDirection: "row",
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+    marginBottom: theme.spacing.sm,
   },
-  outfitTag: {
-    marginRight: 8,
+  minimalItemImage: {
+    width: 32,
+    height: 32,
+    borderRadius: theme.borderRadius.sm,
+    marginRight: theme.spacing.xs,
   },
-  outfitCreator: {
+  moreIndicator: {
+    width: 32,
+    height: 32,
+    borderRadius: theme.borderRadius.sm,
+    backgroundColor: theme.colors.surfaceVariant,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  moreCount: {
+    ...theme.fonts.bodySmall,
+    color: theme.colors.onSurfaceVariant,
+  },
+  outfitInfo: {
     flex: 1,
-    padding: 16,
   },
-  outfitCreatorHeader: {
+  minimalOutfitName: {
+    ...theme.fonts.bodyMedium,
+    color: theme.colors.onSurface,
+    marginBottom: 2,
+  },
+  minimalOutfitDate: {
+    ...theme.fonts.bodySmall,
+    color: theme.colors.onSurfaceVariant,
+  },
+
+  // Outfit creator styles
+  minimalCreator: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  creatorHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    paddingHorizontal: theme.spacing.md,
+    paddingTop: 60,
+    paddingBottom: theme.spacing.md,
+    backgroundColor: theme.colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
   },
-  outfitCreatorActions: {
-    flexDirection: "row",
+  creatorTitle: {
+    ...theme.fonts.titleMedium,
+    color: theme.colors.onSurface,
   },
-  cancelButton: {
-    marginRight: 8,
-  },
-  selectedItemsCard: {
-    marginBottom: 16,
-    elevation: 2,
-  },
-  selectedItemsTitle: {
-    fontSize: 16,
+  saveButton: {
+    ...theme.fonts.bodyMedium,
+    color: theme.colors.primary,
     fontWeight: "600",
-    marginBottom: 8,
   },
-  selectedItemsList: {
+  saveButtonDisabled: {
+    color: theme.colors.onSurfaceVariant,
+  },
+
+  // Selected items preview
+  selectedPreview: {
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    backgroundColor: theme.colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  selectedLabel: {
+    ...theme.fonts.bodyMedium,
+    color: theme.colors.onSurface,
+    marginBottom: theme.spacing.sm,
+  },
+  selectedItems: {
     flexDirection: "row",
-    flexWrap: "wrap",
   },
   selectedItem: {
-    alignItems: "center",
-    marginRight: 12,
-    marginBottom: 8,
+    position: "relative",
+    marginRight: theme.spacing.sm,
   },
   selectedItemImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    marginBottom: 4,
+    width: 48,
+    height: 48,
+    borderRadius: theme.borderRadius.md,
   },
-  selectedItemName: {
-    fontSize: 12,
-    color: "#6b7280",
-    textAlign: "center",
-  },
-  removeItemButton: {
-    margin: 0,
+  removeOverlay: {
     position: "absolute",
-    top: -8,
-    right: -8,
-    backgroundColor: "#ef4444",
-  },
-  categoryTabs: {
-    flexDirection: "row",
-    marginBottom: 16,
-  },
-  categoryTab: {
-    flexDirection: "row",
+    top: -4,
+    right: -4,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: theme.colors.error,
+    justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginRight: 8,
-    borderRadius: 20,
-    backgroundColor: "white",
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
   },
-  categoryTabText: {
-    fontSize: 14,
-    color: "#6b7280",
-    marginRight: 4,
-  },
-  categoryBadge: {
-    backgroundColor: "#6366f1",
-  },
-  itemsGrid: {
+
+  // Category grid
+  categoryGrid: {
     flex: 1,
+    paddingHorizontal: theme.spacing.md,
   },
   categorySection: {
-    marginBottom: 24,
+    marginBottom: theme.spacing.lg,
   },
-  categoryTitle: {
-    fontSize: 16,
+  categoryLabel: {
+    ...theme.fonts.bodyMedium,
+    color: theme.colors.onSurface,
+    marginBottom: theme.spacing.sm,
     fontWeight: "600",
-    color: "#1f2937",
-    marginBottom: 12,
+  },
+  categoryScroll: {
+    flexGrow: 0,
   },
   categoryItems: {
     flexDirection: "row",
-    flexWrap: "wrap",
   },
-  itemCard: {
-    width: (width - 64) / 3,
-    height: (width - 64) / 3,
-    marginRight: 8,
-    marginBottom: 8,
-    borderRadius: 8,
+  minimalItemCard: {
+    width: 64,
+    height: 64,
+    borderRadius: theme.borderRadius.md,
+    marginRight: theme.spacing.sm,
     overflow: "hidden",
-    elevation: 2,
+    backgroundColor: theme.colors.surfaceVariant,
   },
-  itemCardSelected: {
+  minimalItemCardSelected: {
     borderWidth: 2,
-    borderColor: "#6366f1",
+    borderColor: theme.colors.primary,
   },
-  itemImage: {
+  minimalItemImage: {
     width: "100%",
     height: "100%",
   },
-  selectedOverlay: {
+  minimalSelectedOverlay: {
     position: "absolute",
     top: 0,
     left: 0,
@@ -559,12 +564,23 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  fab: {
+
+  // FAB
+  minimalFAB: {
     position: "absolute",
-    margin: 16,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "#6366f1",
+    bottom: theme.spacing.lg,
+    right: theme.spacing.md,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: theme.colors.primary,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 4,
+    shadowColor: theme.colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
 });
 

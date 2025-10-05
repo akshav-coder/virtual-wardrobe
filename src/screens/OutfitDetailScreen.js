@@ -88,7 +88,7 @@ const OutfitDetailScreen = ({ route, navigation }) => {
             onDismiss={() => setMenuVisible(false)}
             anchor={
               <IconButton
-                icon="more-vert"
+                icon="dots-vertical"
                 size={24}
                 iconColor="white"
                 onPress={() => setMenuVisible(true)}

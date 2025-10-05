@@ -159,7 +159,7 @@ const WardrobeScreen = ({ navigation }) => {
               </View>
               <View style={styles.overlayButton}>
                 <IconButton
-                  icon="more-vert"
+                  icon="dots-vertical"
                   size={18}
                   iconColor="white"
                   onPress={() => {
@@ -238,7 +238,7 @@ const WardrobeScreen = ({ navigation }) => {
               onPress={() => handleToggleFavorite(item.id)}
             />
             <IconButton
-              icon="more-vert"
+              icon="dots-vertical"
               size={20}
               iconColor="#9ca3af"
               onPress={() => {
