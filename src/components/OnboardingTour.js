@@ -310,9 +310,7 @@ const OnboardingTour = ({ visible, onComplete, onSkip }) => {
                 textColor="#6366f1"
                 contentStyle={styles.buttonContent}
                 icon={
-                  currentStep === tourSteps.length - 1
-                    ? "check"
-                    : "arrow-forward"
+                  currentStep === tourSteps.length - 1 ? "check" : "arrow-right"
                 }
               >
                 {currentStep === tourSteps.length - 1 ? "Get Started" : "Next"}
