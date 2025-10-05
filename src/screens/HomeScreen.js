@@ -19,6 +19,8 @@ import {
   Avatar,
   Badge,
   FAB,
+  Modal,
+  Portal,
 } from "react-native-paper";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -33,19 +35,14 @@ const HomeScreen = ({ navigation }) => {
   const preferences = useSelector((state) => state.preferences.settings);
   const [todaysOutfit, setTodaysOutfit] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [quickStats, setQuickStats] = useState({
-    totalItems: 0,
-    totalOutfits: 0,
-    favoriteItems: 0,
-  });
+  const [showAddOptions, setShowAddOptions] = useState(false);
 
   useEffect(() => {
-    setQuickStats({
-      totalItems: wardrobe.length,
-      totalOutfits: outfits.length,
-      favoriteItems: wardrobe.filter((item) => item.isFavorite).length,
-    });
-  }, [wardrobe, outfits]);
+    // Auto-generate today's outfit on component mount
+    if (wardrobe.length > 0) {
+      generateTodaysOutfit();
+    }
+  }, [wardrobe]);
 
   const generateTodaysOutfit = () => {
     if (wardrobe.length === 0) return null;
@@ -81,180 +78,259 @@ const HomeScreen = ({ navigation }) => {
     setTimeout(() => setRefreshing(false), 1000);
   };
 
-  const QuickActionCard = ({
-    icon,
-    title,
-    subtitle,
-    onPress,
-    color = "#6366f1",
-    gradient = ["#6366f1", "#8b5cf6"],
-  }) => (
-    <TouchableOpacity onPress={onPress} style={styles.quickActionCard}>
-      <LinearGradient colors={gradient} style={styles.quickActionGradient}>
-        <View style={styles.quickActionContent}>
-          <View style={styles.quickActionIconContainer}>
-            <Ionicons name={icon} size={28} color="white" />
-          </View>
-          <View style={styles.quickActionText}>
-            <Text style={styles.quickActionTitle}>{title}</Text>
-            <Text style={styles.quickActionSubtitle}>{subtitle}</Text>
-          </View>
-          <Ionicons
-            name="arrow-forward"
-            size={20}
-            color="rgba(255,255,255,0.7)"
-          />
-        </View>
-      </LinearGradient>
-    </TouchableOpacity>
-  );
-
-  const WeatherCard = () => (
-    <Card style={styles.weatherCard}>
-      <LinearGradient
-        colors={["#0ea5e9", "#3b82f6"]}
-        style={styles.weatherGradient}
-      >
-        <View style={styles.weatherHeader}>
-          <View>
-            <Text style={styles.weatherLocation}>
-              {weather?.location || "New York"}
-            </Text>
-            <Text style={styles.weatherDescription}>
-              {weather?.description || "Sunny"}
-            </Text>
-          </View>
-          <Ionicons name="partly-sunny" size={40} color="white" />
-        </View>
-        <View style={styles.weatherTemp}>
-          <Text style={styles.weatherTempText}>{weather?.temp || 22}°</Text>
-          <Text style={styles.weatherFeelsLike}>
-            Feels like {weather?.feelsLike || 24}°
-          </Text>
-        </View>
-        <View style={styles.weatherDetails}>
-          <View style={styles.weatherDetail}>
-            <Ionicons name="water" size={16} color="rgba(255,255,255,0.8)" />
-            <Text style={styles.weatherDetailText}>
-              {weather?.humidity || 65}%
-            </Text>
-          </View>
-          <View style={styles.weatherDetail}>
-            <Ionicons name="leaf" size={16} color="rgba(255,255,255,0.8)" />
-            <Text style={styles.weatherDetailText}>
-              {weather?.windSpeed || 12} km/h
-            </Text>
-          </View>
-        </View>
-      </LinearGradient>
-    </Card>
-  );
-
-  const StatsCard = ({ title, value, icon, color, trend }) => (
-    <Card style={styles.statsCard}>
-      <Card.Content style={styles.statsContent}>
-        <View style={styles.statsHeader}>
-          <View
-            style={[
-              styles.statsIconContainer,
-              { backgroundColor: color + "20" },
-            ]}
-          >
-            <Ionicons name={icon} size={24} color={color} />
-          </View>
-          <Text style={styles.statsValue}>{value}</Text>
-        </View>
-        <Text style={styles.statsTitle}>{title}</Text>
-        {trend && (
-          <View style={styles.statsTrend}>
-            <Ionicons name="trending-up" size={14} color="#10b981" />
-            <Text style={styles.statsTrendText}>{trend}</Text>
-          </View>
-        )}
-      </Card.Content>
-    </Card>
-  );
-
   const TodaysOutfitCard = () => {
-    if (!todaysOutfit || todaysOutfit.items.length === 0) {
-      return (
-        <Card style={styles.outfitCard}>
-          <Card.Content style={styles.outfitContent}>
-            <View style={styles.outfitEmpty}>
-              <Ionicons name="shirt" size={48} color="#9ca3af" />
-              <Text style={styles.outfitEmptyTitle}>No outfit generated</Text>
-              <Text style={styles.outfitEmptySubtitle}>
-                Add items to your wardrobe to get outfit suggestions
-              </Text>
-              <Button
-                mode="contained"
-                onPress={() => navigation.navigate("AddItem")}
-                style={styles.outfitEmptyButton}
-                icon="plus"
-              >
-                Add Items
-              </Button>
-            </View>
-          </Card.Content>
-        </Card>
-      );
-    }
+    // Always show something, even if no outfit is generated
+    const hasOutfit = todaysOutfit && todaysOutfit.items.length > 0;
 
     return (
-      <Card style={styles.outfitCard}>
-        <Card.Content style={styles.outfitContent}>
-          <View style={styles.outfitHeader}>
-            <View>
-              <Text style={styles.outfitTitle}>Today's Look</Text>
-              <Text style={styles.outfitSubtitle}>
-                {todaysOutfit.items.length} items • {todaysOutfit.weather}
-              </Text>
-            </View>
-            <Button
-              mode="outlined"
-              onPress={() => navigation.navigate("Main", { screen: "Planner" })}
-              style={styles.outfitButton}
-              compact
-            >
-              View All
-            </Button>
-          </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.outfitItems}
-          >
-            {todaysOutfit.items.map((item, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.outfitItem}
-                onPress={() => console.log("Item tapped:", item.name)}
-              >
-                <Image
-                  source={{ uri: item.image }}
-                  style={styles.outfitItemImage}
-                />
-                <Text style={styles.outfitItemName} numberOfLines={1}>
-                  {item.name}
+      <Card style={styles.todaysOutfitCard}>
+        <LinearGradient
+          colors={["#667eea", "#764ba2"]}
+          style={styles.todaysOutfitGradient}
+        >
+          <View style={styles.todaysOutfitContent}>
+            <View style={styles.todaysOutfitHeader}>
+              <View>
+                <Text style={styles.todaysOutfitTitle}>Today's Outfit</Text>
+                <Text style={styles.todaysOutfitSubtitle}>
+                  {hasOutfit
+                    ? `${todaysOutfit.items.length} items • ${todaysOutfit.weather}`
+                    : "Tap to generate your look"}
                 </Text>
+              </View>
+              <TouchableOpacity
+                style={styles.refreshButton}
+                onPress={generateTodaysOutfit}
+              >
+                <Ionicons name="refresh" size={20} color="white" />
               </TouchableOpacity>
-            ))}
-          </ScrollView>
+            </View>
+
+            {hasOutfit ? (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.outfitItems}
+              >
+                {todaysOutfit.items.map((item, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.outfitItem}
+                    onPress={() => console.log("Item tapped:", item.name)}
+                  >
+                    <Image
+                      source={{ uri: item.image }}
+                      style={styles.outfitItemImage}
+                    />
+                    <Text style={styles.outfitItemName} numberOfLines={1}>
+                      {item.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            ) : (
+              <View style={styles.emptyOutfit}>
+                <Ionicons
+                  name="sparkles"
+                  size={48}
+                  color="rgba(255,255,255,0.8)"
+                />
+                <Text style={styles.emptyOutfitText}>
+                  Ready to create your perfect look?
+                </Text>
+                <TouchableOpacity
+                  style={styles.generateButton}
+                  onPress={generateTodaysOutfit}
+                >
+                  <Text style={styles.generateButtonText}>Generate Outfit</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </LinearGradient>
+      </Card>
+    );
+  };
+
+  const UpcomingOutfitsCard = () => {
+    const upcomingOutfits = outfits.slice(0, 3);
+
+    return (
+      <Card style={styles.upcomingOutfitsCard}>
+        <Card.Content style={styles.upcomingOutfitsContent}>
+          <View style={styles.upcomingOutfitsHeader}>
+            <Text style={styles.upcomingOutfitsTitle}>Upcoming Outfits</Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Main", { screen: "Planner" })}
+            >
+              <Text style={styles.viewAllText}>View All</Text>
+            </TouchableOpacity>
+          </View>
+
+          {upcomingOutfits.length > 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.upcomingOutfitsScroll}
+            >
+              {upcomingOutfits.map((outfit, index) => (
+                <TouchableOpacity
+                  key={outfit.id}
+                  style={styles.upcomingOutfitItem}
+                  onPress={() => console.log("Outfit tapped:", outfit.name)}
+                >
+                  <View style={styles.upcomingOutfitHeader}>
+                    <Text style={styles.upcomingOutfitName}>{outfit.name}</Text>
+                    <Text style={styles.upcomingOutfitDate}>
+                      {index === 0
+                        ? "Today"
+                        : index === 1
+                        ? "Tomorrow"
+                        : "This Week"}
+                    </Text>
+                  </View>
+                  <View style={styles.upcomingOutfitItems}>
+                    {outfit.items.slice(0, 4).map((item, itemIndex) => (
+                      <Image
+                        key={itemIndex}
+                        source={{ uri: item.image }}
+                        style={styles.upcomingOutfitItemImage}
+                      />
+                    ))}
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          ) : (
+            <View style={styles.emptyUpcoming}>
+              <Ionicons name="calendar-outline" size={32} color="#9ca3af" />
+              <Text style={styles.emptyUpcomingText}>
+                No upcoming outfits planned
+              </Text>
+              <Button
+                mode="outlined"
+                onPress={() =>
+                  navigation.navigate("Main", { screen: "Planner" })
+                }
+                style={styles.planOutfitButton}
+                compact
+              >
+                Plan Outfits
+              </Button>
+            </View>
+          )}
         </Card.Content>
       </Card>
     );
   };
 
-  const RecentActivityItem = ({ activity }) => (
-    <View style={styles.activityItem}>
-      <View style={styles.activityIcon}>
-        <Ionicons name={activity.icon} size={20} color={activity.color} />
-      </View>
-      <View style={styles.activityContent}>
-        <Text style={styles.activityText}>{activity.text}</Text>
-        <Text style={styles.activityTime}>{activity.time}</Text>
+  const QuickActionsCard = () => (
+    <View style={styles.quickActionsContainer}>
+      <Text style={styles.quickActionsTitle}>Quick Actions</Text>
+      <View style={styles.quickActionsGrid}>
+        <TouchableOpacity
+          style={styles.quickActionItem}
+          onPress={() => navigation.navigate("Main", { screen: "Planner" })}
+        >
+          <View
+            style={[styles.quickActionIcon, { backgroundColor: "#f59e0b" }]}
+          >
+            <Ionicons name="calendar" size={24} color="white" />
+          </View>
+          <Text style={styles.quickActionText}>Plan Outfit</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.quickActionItem}
+          onPress={() => navigation.navigate("Stylist")}
+        >
+          <View
+            style={[styles.quickActionIcon, { backgroundColor: "#8b5cf6" }]}
+          >
+            <Ionicons name="sparkles" size={24} color="white" />
+          </View>
+          <Text style={styles.quickActionText}>AI Stylist</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.quickActionItem}
+          onPress={() => navigation.navigate("Wardrobe")}
+        >
+          <View
+            style={[styles.quickActionIcon, { backgroundColor: "#ef4444" }]}
+          >
+            <Ionicons name="shirt" size={24} color="white" />
+          </View>
+          <Text style={styles.quickActionText}>Wardrobe</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.quickActionItem}
+          onPress={() => setShowAddOptions(true)}
+        >
+          <View
+            style={[styles.quickActionIcon, { backgroundColor: "#10b981" }]}
+          >
+            <Ionicons name="add" size={24} color="white" />
+          </View>
+          <Text style={styles.quickActionText}>Add</Text>
+        </TouchableOpacity>
       </View>
     </View>
+  );
+
+  const AddOptionsModal = () => (
+    <Portal>
+      <Modal
+        visible={showAddOptions}
+        onDismiss={() => setShowAddOptions(false)}
+        contentContainerStyle={styles.addOptionsModal}
+      >
+        <View style={styles.addOptionsContent}>
+          <Text style={styles.addOptionsTitle}>
+            What would you like to add?
+          </Text>
+
+          <TouchableOpacity
+            style={styles.addOption}
+            onPress={() => {
+              setShowAddOptions(false);
+              navigation.navigate("AddItem");
+            }}
+          >
+            <View style={styles.addOptionIcon}>
+              <Ionicons name="shirt" size={24} color="#10b981" />
+            </View>
+            <View style={styles.addOptionContent}>
+              <Text style={styles.addOptionTitle}>Add Item</Text>
+              <Text style={styles.addOptionSubtitle}>
+                Add a new clothing item to your wardrobe
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.addOption}
+            onPress={() => {
+              setShowAddOptions(false);
+              navigation.navigate("Main", { screen: "Planner" });
+            }}
+          >
+            <View style={styles.addOptionIcon}>
+              <Ionicons name="sparkles" size={24} color="#8b5cf6" />
+            </View>
+            <View style={styles.addOptionContent}>
+              <Text style={styles.addOptionTitle}>Add New Outfit</Text>
+              <Text style={styles.addOptionSubtitle}>
+                Create a new outfit combination
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+          </TouchableOpacity>
+        </View>
+      </Modal>
+    </Portal>
   );
 
   return (
@@ -266,224 +342,62 @@ const HomeScreen = ({ navigation }) => {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {/* Header */}
-        <LinearGradient colors={["#6366f1", "#8b5cf6"]} style={styles.header}>
+        {/* Minimal Header */}
+        <View style={styles.header}>
           <View style={styles.headerContent}>
             <View>
-              <Text style={styles.greeting}>Good morning!</Text>
-              <Text style={styles.userName}>Ready to style today?</Text>
+              <Text style={styles.greeting}>Good morning</Text>
+              <Text style={styles.subGreeting}>Ready to style today?</Text>
             </View>
-            <TouchableOpacity
-              onPress={() => navigation.navigate("Profile")}
-              style={styles.profileButton}
-            >
-              <Avatar.Text
-                size={40}
-                label="U"
-                style={styles.avatar}
-                labelStyle={styles.avatarLabel}
-              />
-            </TouchableOpacity>
-          </View>
-        </LinearGradient>
-
-        {/* Compact Weather Info */}
-        <View style={styles.weatherContainer}>
-          <Card style={styles.weatherCardCompact}>
-            <Card.Content style={styles.weatherContentCompact}>
+            <View style={styles.headerRight}>
               <View style={styles.weatherInfo}>
-                <Ionicons name="partly-sunny" size={24} color="#6366f1" />
-                <View style={styles.weatherText}>
-                  <Text style={styles.weatherTempCompact}>
-                    {weather?.temp || 22}° {weather?.description || "Sunny"}
-                  </Text>
-                  <Text style={styles.weatherLocationCompact}>
-                    {weather?.location || "New York"}
-                  </Text>
-                </View>
+                <Ionicons name="partly-sunny" size={20} color="#6366f1" />
+                <Text style={styles.weatherText}>{weather?.temp || 22}°</Text>
               </View>
-            </Card.Content>
-          </Card>
+              <TouchableOpacity
+                onPress={() => navigation.navigate("Profile")}
+                style={styles.profileButton}
+              >
+                <Avatar.Text
+                  size={40}
+                  label="U"
+                  style={styles.avatar}
+                  labelStyle={styles.avatarLabel}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
 
-        {/* Stats Grid */}
-        <View style={styles.statsGrid}>
-          <StatsCard
-            title="Total Items"
-            value={quickStats.totalItems}
-            icon="shirt"
-            color="#6366f1"
-            trend="+2 this week"
-          />
-          <StatsCard
-            title="Outfits"
-            value={quickStats.totalOutfits}
-            icon="sparkles"
-            color="#8b5cf6"
-            trend="+1 today"
-          />
-          <StatsCard
-            title="Favorites"
-            value={quickStats.favoriteItems}
-            icon="heart"
-            color="#ec4899"
-          />
-          <StatsCard
-            title="Style Score"
-            value="85"
-            icon="star"
-            color="#f59e0b"
-            trend="+5 this month"
-          />
-        </View>
-
-        {/* Today's Outfit */}
-        <View style={styles.outfitContainer}>
-          <Text style={styles.sectionTitle}>Today's Outfit</Text>
+        {/* Today's Outfit - Main Feature */}
+        <View style={styles.mainContent}>
           <TodaysOutfitCard />
         </View>
 
         {/* Upcoming Outfits */}
-        <View style={styles.outfitContainer}>
-          <Text style={styles.sectionTitle}>Upcoming Outfits</Text>
-          <Card style={styles.upcomingOutfitsCard}>
-            <Card.Content style={styles.upcomingOutfitsContent}>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.upcomingOutfitsScroll}
-              >
-                {outfits.slice(0, 3).map((outfit, index) => (
-                  <TouchableOpacity
-                    key={outfit.id}
-                    style={styles.upcomingOutfitItem}
-                    onPress={() => console.log("Outfit tapped:", outfit.name)}
-                  >
-                    <View style={styles.upcomingOutfitHeader}>
-                      <Text style={styles.upcomingOutfitName}>
-                        {outfit.name}
-                      </Text>
-                      <Text style={styles.upcomingOutfitDate}>
-                        {index === 0
-                          ? "Today"
-                          : index === 1
-                          ? "Tomorrow"
-                          : "This Week"}
-                      </Text>
-                    </View>
-                    <View style={styles.upcomingOutfitItems}>
-                      {outfit.items.slice(0, 3).map((item, itemIndex) => (
-                        <Image
-                          key={itemIndex}
-                          source={{ uri: item.image }}
-                          style={styles.upcomingOutfitItemImage}
-                        />
-                      ))}
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-              <Button
-                mode="outlined"
-                onPress={() =>
-                  navigation.navigate("Main", { screen: "Planner" })
-                }
-                style={styles.viewAllOutfitsButton}
-                compact
-              >
-                View All Outfits
-              </Button>
-            </Card.Content>
-          </Card>
+        <View style={styles.upcomingSection}>
+          <UpcomingOutfitsCard />
         </View>
 
         {/* Quick Actions */}
-        <View style={styles.quickActionsContainer}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <View style={styles.quickActionsGrid}>
-            <QuickActionCard
-              icon="add"
-              title="Add Item"
-              subtitle="Add new clothing"
-              onPress={() => navigation.navigate("AddItem")}
-              gradient={["#10b981", "#059669"]}
-            />
-            <QuickActionCard
-              icon="calendar"
-              title="Plan Outfit"
-              subtitle="Schedule outfits"
-              onPress={() => navigation.navigate("Main", { screen: "Planner" })}
-              gradient={["#f59e0b", "#d97706"]}
-            />
-            <QuickActionCard
-              icon="sparkles"
-              title="AI Stylist"
-              subtitle="Get recommendations"
-              onPress={() => navigation.navigate("Stylist")}
-              gradient={["#8b5cf6", "#7c3aed"]}
-            />
-            <QuickActionCard
-              icon="shirt"
-              title="Wardrobe"
-              subtitle="Browse items"
-              onPress={() => navigation.navigate("Wardrobe")}
-              gradient={["#ef4444", "#dc2626"]}
-            />
-          </View>
-        </View>
-
-        {/* Recent Activity */}
-        <View style={styles.activityContainer}>
-          <Text style={styles.sectionTitle}>Recent Activity</Text>
-          <Card style={styles.activityCard}>
-            <Card.Content>
-              <RecentActivityItem
-                activity={{
-                  icon: "add-circle",
-                  color: "#10b981",
-                  text: "Added Black Ankle Boots",
-                  time: "2 hours ago",
-                }}
-              />
-              <RecentActivityItem
-                activity={{
-                  icon: "sparkles",
-                  color: "#8b5cf6",
-                  text: "Got AI recommendation",
-                  time: "Yesterday",
-                }}
-              />
-              <RecentActivityItem
-                activity={{
-                  icon: "calendar",
-                  color: "#f59e0b",
-                  text: "Planned weekend outfit",
-                  time: "2 days ago",
-                }}
-              />
-              <RecentActivityItem
-                activity={{
-                  icon: "heart",
-                  color: "#ec4899",
-                  text: "Added to favorites",
-                  time: "3 days ago",
-                }}
-              />
-            </Card.Content>
-          </Card>
+        <View style={styles.actionsSection}>
+          <QuickActionsCard />
         </View>
 
         {/* Bottom Spacing */}
         <View style={styles.bottomSpacing} />
       </ScrollView>
 
-      {/* Floating Action Button */}
-      <FAB
-        icon="camera"
-        style={styles.fab}
-        onPress={() => navigation.navigate("AddItem")}
-        label="Add Item"
-      />
+      {/* Custom + Button */}
+      <TouchableOpacity
+        style={styles.customFAB}
+        onPress={() => setShowAddOptions(true)}
+      >
+        <Ionicons name="add" size={24} color="white" />
+      </TouchableOpacity>
+
+      {/* Add Options Modal */}
+      <AddOptionsModal />
     </View>
   );
 };
@@ -498,8 +412,9 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingTop: 60,
-    paddingBottom: 30,
-    paddingHorizontal: 20,
+    paddingBottom: 24,
+    paddingHorizontal: 24,
+    backgroundColor: "white",
   },
   headerContent: {
     flexDirection: "row",
@@ -507,130 +422,179 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   greeting: {
-    fontSize: 16,
-    color: "rgba(255, 255, 255, 0.8)",
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#1f2937",
     marginBottom: 4,
   },
-  userName: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "white",
+  subGreeting: {
+    fontSize: 16,
+    color: "#6b7280",
+  },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+  },
+  weatherInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: "#f3f4f6",
+    borderRadius: 20,
+  },
+  weatherText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#374151",
   },
   profileButton: {
     borderRadius: 20,
   },
   avatar: {
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    backgroundColor: "#e5e7eb",
   },
   avatarLabel: {
-    color: "white",
-    fontWeight: "bold",
-  },
-  weatherContainer: {
-    paddingHorizontal: 20,
-    marginTop: -15,
-    marginBottom: 20,
-  },
-  weatherCardCompact: {
-    borderRadius: 12,
-    elevation: 2,
-  },
-  weatherContentCompact: {
-    padding: 12,
-  },
-  weatherInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  weatherText: {
-    marginLeft: 12,
-  },
-  weatherTempCompact: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#1f2937",
-  },
-  weatherLocationCompact: {
-    fontSize: 12,
     color: "#6b7280",
+    fontWeight: "bold",
   },
-  statsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    paddingHorizontal: 20,
-    gap: 12,
-    marginBottom: 20,
+  mainContent: {
+    paddingHorizontal: 24,
+    marginBottom: 24,
   },
-  statsCard: {
-    width: (width - 52) / 2,
-    borderRadius: 12,
-    elevation: 2,
+  todaysOutfitCard: {
+    borderRadius: 20,
+    elevation: 8,
+    shadowColor: "#667eea",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
   },
-  statsContent: {
-    padding: 16,
+  todaysOutfitGradient: {
+    borderRadius: 20,
+    padding: 24,
   },
-  statsHeader: {
+  todaysOutfitContent: {
+    minHeight: 200,
+  },
+  todaysOutfitHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
+    alignItems: "flex-start",
+    marginBottom: 20,
   },
-  statsIconContainer: {
+  todaysOutfitTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "white",
+    marginBottom: 4,
+  },
+  todaysOutfitSubtitle: {
+    fontSize: 14,
+    color: "rgba(255, 255, 255, 0.8)",
+  },
+  refreshButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
     justifyContent: "center",
     alignItems: "center",
   },
-  statsValue: {
-    fontSize: 24,
+  outfitItems: {
+    flexDirection: "row",
+  },
+  outfitItem: {
+    marginRight: 16,
+    alignItems: "center",
+  },
+  outfitItemImage: {
+    width: 70,
+    height: 70,
+    borderRadius: 12,
+    marginBottom: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+  },
+  outfitItemName: {
+    fontSize: 12,
+    color: "white",
+    textAlign: "center",
+    maxWidth: 70,
+    fontWeight: "500",
+  },
+  emptyOutfit: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 20,
+  },
+  emptyOutfitText: {
+    fontSize: 16,
+    color: "rgba(255, 255, 255, 0.9)",
+    textAlign: "center",
+    marginTop: 12,
+    marginBottom: 16,
+    fontWeight: "500",
+  },
+  generateButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius: 25,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+  },
+  generateButtonText: {
+    color: "white",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  upcomingSection: {
+    paddingHorizontal: 24,
+    marginBottom: 24,
+  },
+  upcomingOutfitsCard: {
+    borderRadius: 16,
+    elevation: 4,
+  },
+  upcomingOutfitsContent: {
+    padding: 20,
+  },
+  upcomingOutfitsHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  upcomingOutfitsTitle: {
+    fontSize: 20,
     fontWeight: "bold",
     color: "#1f2937",
   },
-  statsTitle: {
+  viewAllText: {
     fontSize: 14,
-    color: "#6b7280",
-    marginBottom: 4,
-  },
-  statsTrend: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  statsTrendText: {
-    fontSize: 12,
-    color: "#10b981",
+    color: "#6366f1",
     fontWeight: "600",
-  },
-  outfitContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
-  upcomingOutfitsCard: {
-    borderRadius: 12,
-    elevation: 2,
-  },
-  upcomingOutfitsContent: {
-    padding: 16,
   },
   upcomingOutfitsScroll: {
     marginBottom: 12,
   },
   upcomingOutfitItem: {
-    marginRight: 12,
-    padding: 12,
+    marginRight: 16,
+    padding: 16,
     backgroundColor: "#f8fafc",
-    borderRadius: 8,
-    minWidth: 140,
+    borderRadius: 12,
+    minWidth: 160,
   },
   upcomingOutfitHeader: {
-    marginBottom: 8,
+    marginBottom: 12,
   },
   upcomingOutfitName: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "bold",
     color: "#1f2937",
-    marginBottom: 2,
+    marginBottom: 4,
   },
   upcomingOutfitDate: {
     fontSize: 12,
@@ -638,173 +602,128 @@ const styles = StyleSheet.create({
   },
   upcomingOutfitItems: {
     flexDirection: "row",
-    gap: 4,
+    flexWrap: "wrap",
+    gap: 6,
   },
   upcomingOutfitItemImage: {
-    width: 32,
-    height: 32,
-    borderRadius: 4,
+    width: 36,
+    height: 36,
+    borderRadius: 6,
   },
-  viewAllOutfitsButton: {
-    borderRadius: 8,
-    alignSelf: "center",
-  },
-  outfitCard: {
-    borderRadius: 16,
-    elevation: 4,
-  },
-  outfitContent: {
-    padding: 20,
-  },
-  outfitEmpty: {
+  emptyUpcoming: {
     alignItems: "center",
     paddingVertical: 20,
   },
-  outfitEmptyTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#374151",
-    marginTop: 12,
-    marginBottom: 4,
-  },
-  outfitEmptySubtitle: {
+  emptyUpcomingText: {
     fontSize: 14,
     color: "#6b7280",
     textAlign: "center",
+    marginTop: 8,
     marginBottom: 16,
   },
-  outfitEmptyButton: {
+  planOutfitButton: {
     borderRadius: 8,
   },
-  outfitHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  outfitTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#1f2937",
-  },
-  outfitSubtitle: {
-    fontSize: 14,
-    color: "#6b7280",
-  },
-  outfitButton: {
-    borderRadius: 8,
-  },
-  outfitItems: {
-    flexDirection: "row",
-  },
-  outfitItem: {
-    marginRight: 12,
-    alignItems: "center",
-  },
-  outfitItemImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
-    marginBottom: 6,
-  },
-  outfitItemName: {
-    fontSize: 12,
-    color: "#374151",
-    textAlign: "center",
-    maxWidth: 60,
+  actionsSection: {
+    paddingHorizontal: 24,
+    marginBottom: 24,
   },
   quickActionsContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
+    marginBottom: 8,
   },
-  sectionTitle: {
+  quickActionsTitle: {
     fontSize: 20,
     fontWeight: "bold",
     color: "#1f2937",
     marginBottom: 16,
   },
   quickActionsGrid: {
-    gap: 12,
-  },
-  quickActionCard: {
-    borderRadius: 12,
-    elevation: 2,
-  },
-  quickActionGradient: {
-    borderRadius: 12,
-    padding: 16,
-  },
-  quickActionContent: {
     flexDirection: "row",
-    alignItems: "center",
+    justifyContent: "space-between",
   },
-  quickActionIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+  quickActionItem: {
+    alignItems: "center",
+    flex: 1,
+  },
+  quickActionIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginBottom: 8,
   },
   quickActionText: {
-    flex: 1,
-  },
-  quickActionTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "white",
-    marginBottom: 2,
-  },
-  quickActionSubtitle: {
-    fontSize: 14,
-    color: "rgba(255, 255, 255, 0.8)",
-  },
-  activityContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
-  activityCard: {
-    borderRadius: 12,
-    elevation: 2,
-  },
-  activityItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f3f4f6",
-  },
-  activityIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#f3f4f6",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  activityContent: {
-    flex: 1,
-  },
-  activityText: {
-    fontSize: 14,
-    color: "#374151",
-    marginBottom: 2,
-  },
-  activityTime: {
     fontSize: 12,
-    color: "#9ca3af",
+    color: "#374151",
+    fontWeight: "500",
+    textAlign: "center",
   },
   bottomSpacing: {
     height: 120,
   },
-  fab: {
+  customFAB: {
     position: "absolute",
-    margin: 16,
-    right: 0,
-    bottom: 20,
+    bottom: 24,
+    right: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: "#6366f1",
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 8,
+    shadowColor: "#6366f1",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  addOptionsModal: {
+    backgroundColor: "white",
+    margin: 20,
+    borderRadius: 16,
+    padding: 0,
+  },
+  addOptionsContent: {
+    padding: 24,
+  },
+  addOptionsTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#1f2937",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  addOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: "#f8fafc",
+    marginBottom: 12,
+  },
+  addOptionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "white",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 16,
+  },
+  addOptionContent: {
+    flex: 1,
+  },
+  addOptionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1f2937",
+    marginBottom: 4,
+  },
+  addOptionSubtitle: {
+    fontSize: 14,
+    color: "#6b7280",
   },
 });
 
