@@ -21,10 +21,14 @@ import {
 } from "react-native-paper";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import { useDispatch } from "react-redux";
+import { setUser } from "../../store/slices/userSlice";
+import { demoUser } from "../../data/demoData";
 
 const { width, height } = Dimensions.get("window");
 
 const LoginScreen = ({ navigation }) => {
+  const dispatch = useDispatch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -40,8 +44,9 @@ const LoginScreen = ({ navigation }) => {
     // Simulate API call
     setTimeout(() => {
       setLoading(false);
-      // For demo purposes, accept any email/password
-      navigation.replace("Main");
+      // Set user in Redux store to authenticate
+      dispatch(setUser(demoUser));
+      // The App.js will automatically show Main screen due to authentication state change
     }, 1500);
   };
 
@@ -177,7 +182,11 @@ const LoginScreen = ({ navigation }) => {
                 </Text>
                 <Button
                   mode="outlined"
-                  onPress={() => navigation.replace("Main")}
+                  onPress={() => {
+                    // Set demo user in Redux store for guest mode
+                    dispatch(setUser(demoUser));
+                    // The App.js will automatically show Main screen due to authentication state change
+                  }}
                   style={styles.demoButton}
                   icon="play"
                 >

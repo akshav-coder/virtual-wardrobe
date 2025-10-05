@@ -19,6 +19,7 @@ import WardrobeScreen from "./src/screens/WardrobeScreen";
 import OutfitPlannerScreen from "./src/screens/OutfitPlannerScreen";
 import StylistScreen from "./src/screens/StylistScreen";
 import ProfileScreen from "./src/screens/ProfileScreen";
+import EditProfileScreen from "./src/screens/EditProfileScreen";
 import AddItemScreen from "./src/screens/AddItemScreen";
 import OutfitDetailScreen from "./src/screens/OutfitDetailScreen";
 import CalendarScreen from "./src/screens/CalendarScreen";
@@ -45,6 +46,7 @@ const MainApp = () => {
   const { isOnboardingComplete, isTourVisible } = useSelector(
     (state) => state.tour
   );
+  const { isAuthenticated } = useSelector((state) => state.user);
 
   useEffect(() => {
     // For demo purposes, show tour on first launch
@@ -76,51 +78,65 @@ const MainApp = () => {
             },
           }}
         >
-          <Stack.Screen
-            name="Login"
-            component={LoginScreen}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="Register"
-            component={RegisterScreen}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="ForgotPassword"
-            component={ForgotPasswordScreen}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="Main"
-            component={MainTabs}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="AddItem"
-            component={AddItemScreen}
-            options={{ title: "Add New Item" }}
-          />
-          <Stack.Screen
-            name="OutfitDetail"
-            component={OutfitDetailScreen}
-            options={{ title: "Outfit Details" }}
-          />
-          <Stack.Screen
-            name="Calendar"
-            component={CalendarScreen}
-            options={{ title: "Calendar" }}
-          />
-          <Stack.Screen
-            name="Weather"
-            component={WeatherScreen}
-            options={{ title: "Weather" }}
-          />
-          <Stack.Screen
-            name="Settings"
-            component={SettingsScreen}
-            options={{ title: "Settings" }}
-          />
+          {isAuthenticated ? (
+            // Authenticated screens
+            <>
+              <Stack.Screen
+                name="Main"
+                component={MainTabs}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="AddItem"
+                component={AddItemScreen}
+                options={{ title: "Add New Item" }}
+              />
+              <Stack.Screen
+                name="OutfitDetail"
+                component={OutfitDetailScreen}
+                options={{ title: "Outfit Details" }}
+              />
+              <Stack.Screen
+                name="Calendar"
+                component={CalendarScreen}
+                options={{ title: "Calendar" }}
+              />
+              <Stack.Screen
+                name="Weather"
+                component={WeatherScreen}
+                options={{ title: "Weather" }}
+              />
+              <Stack.Screen
+                name="Settings"
+                component={SettingsScreen}
+                options={{ title: "Settings" }}
+              />
+              <Stack.Screen
+                name="EditProfile"
+                component={EditProfileScreen}
+                options={{ title: "Edit Profile" }}
+              />
+            </>
+          ) : (
+            // Auth screens
+            <>
+              <Stack.Screen
+                name="Login"
+                component={LoginScreen}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="Register"
+                component={RegisterScreen}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="ForgotPassword"
+                component={ForgotPasswordScreen}
+                options={{ headerShown: false }}
+              />
+            </>
+          )}
         </Stack.Navigator>
       </NavigationContainer>
 

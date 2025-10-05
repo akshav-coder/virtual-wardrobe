@@ -640,8 +640,23 @@ export const demoUser = {
   id: "1",
   name: "Fashion Enthusiast",
   email: "user@example.com",
+  phone: "+1 (555) 123-4567",
+  dateOfBirth: "15/03/1990",
+  gender: "Female",
   avatar:
     "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face",
+  bodyMeasurements: {
+    height: "165",
+    weight: "58",
+    chest: "86",
+    waist: "68",
+    hips: "92",
+    inseam: "76",
+    shoulder: "38",
+    sleeve: "60",
+    neck: "35",
+    shoeSize: "7",
+  },
   preferences: {
     style: "casual",
     colors: ["White", "Blue", "Black", "Navy", "Gray"],

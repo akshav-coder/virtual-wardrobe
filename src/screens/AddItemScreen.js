@@ -283,175 +283,246 @@ const AddItemScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Add New Item</Text>
+          <Text style={styles.headerSubtitle}>Fill in the details below</Text>
+        </View>
+
         {/* Image Section */}
-        <Card style={styles.imageCard}>
-          <Card.Content>
-            <Title style={styles.sectionTitle}>Item Photo</Title>
-            <View style={styles.imageSection}>
-              {formData.image ? (
-                <View style={styles.imageContainer}>
-                  <Image
-                    source={{ uri: formData.image }}
-                    style={styles.itemImage}
-                  />
-                  <IconButton
-                    icon="close"
-                    size={20}
-                    iconColor="white"
-                    style={styles.removeImageButton}
-                    onPress={() => setFormData({ ...formData, image: null })}
+        <View style={styles.imageCard}>
+          <Text style={styles.sectionTitle}>📸 Item Photo</Text>
+          <View style={styles.imageSection}>
+            {formData.image ? (
+              <View style={styles.imageContainer}>
+                <Image
+                  source={{ uri: formData.image }}
+                  style={styles.itemImage}
+                />
+                <TouchableOpacity
+                  style={styles.removeImageButton}
+                  onPress={() => setFormData({ ...formData, image: null })}
+                >
+                  <Ionicons name="close-circle" size={24} color="#ef4444" />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={styles.imagePlaceholder}
+                onPress={
+                  selectedMethod === "camera" ? handleCamera : handleImagePicker
+                }
+              >
+                <View style={styles.placeholderIcon}>
+                  <Ionicons
+                    name={selectedMethod === "camera" ? "camera" : "image"}
+                    size={32}
+                    color="#6366f1"
                   />
                 </View>
-              ) : (
-                <TouchableOpacity
-                  style={styles.imagePlaceholder}
-                  onPress={
-                    selectedMethod === "camera"
-                      ? handleCamera
-                      : handleImagePicker
-                  }
-                >
-                  <Ionicons name="camera" size={48} color="#9ca3af" />
-                  <Text style={styles.imagePlaceholderText}>
-                    Tap to{" "}
-                    {selectedMethod === "camera"
-                      ? "take photo"
-                      : "select image"}
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
-            <SegmentedButtons
-              value={selectedMethod}
-              onValueChange={setSelectedMethod}
-              buttons={[
-                { value: "camera", label: "Camera", icon: "camera" },
-                { value: "gallery", label: "Gallery", icon: "image" },
+                <Text style={styles.imagePlaceholderText}>
+                  {selectedMethod === "camera"
+                    ? "Take a photo"
+                    : "Choose from gallery"}
+                </Text>
+                <Text style={styles.imagePlaceholderSubtext}>
+                  Tap to add an image
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Method Selector */}
+          <View style={styles.methodSelectorContainer}>
+            <TouchableOpacity
+              style={[
+                styles.methodButton,
+                selectedMethod === "camera" && styles.methodButtonActive,
               ]}
-              style={styles.methodSelector}
-            />
-          </Card.Content>
-        </Card>
-
-        {/* Basic Information */}
-        <Card style={styles.formCard}>
-          <Card.Content>
-            <Title style={styles.sectionTitle}>Basic Information</Title>
-
-            <TextInput
-              label="Item Name *"
-              value={formData.name}
-              onChangeText={(text) => setFormData({ ...formData, name: text })}
-              style={styles.input}
-              mode="outlined"
-            />
-
-            <TextInput
-              label="Brand"
-              value={formData.brand}
-              onChangeText={(text) => setFormData({ ...formData, brand: text })}
-              style={styles.input}
-              mode="outlined"
-            />
+              onPress={() => setSelectedMethod("camera")}
+            >
+              <Ionicons
+                name="camera"
+                size={20}
+                color={selectedMethod === "camera" ? "#6366f1" : "#6b7280"}
+              />
+              <Text
+                style={[
+                  styles.methodButtonText,
+                  selectedMethod === "camera" && styles.methodButtonTextActive,
+                ]}
+              >
+                Camera
+              </Text>
+            </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.selectorButton}
-              onPress={() => setShowCategoryModal(true)}
+              style={[
+                styles.methodButton,
+                selectedMethod === "gallery" && styles.methodButtonActive,
+              ]}
+              onPress={() => setSelectedMethod("gallery")}
             >
-              <Text style={styles.selectorLabel}>Category *</Text>
-              <View style={styles.selectorContent}>
+              <Ionicons
+                name="image"
+                size={20}
+                color={selectedMethod === "gallery" ? "#6366f1" : "#6b7280"}
+              />
+              <Text
+                style={[
+                  styles.methodButtonText,
+                  selectedMethod === "gallery" && styles.methodButtonTextActive,
+                ]}
+              >
+                Gallery
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Basic Information */}
+        <View style={styles.formCard}>
+          <Text style={styles.sectionTitle}>📝 Basic Information</Text>
+
+          <View style={styles.inputRow}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Item Name *</Text>
+              <TextInput
+                placeholder="Enter item name"
+                value={formData.name}
+                onChangeText={(text) =>
+                  setFormData({ ...formData, name: text })
+                }
+                style={styles.input}
+                mode="outlined"
+              />
+            </View>
+          </View>
+
+          <View style={styles.inputRow}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Brand</Text>
+              <TextInput
+                placeholder="Enter brand name"
+                value={formData.brand}
+                onChangeText={(text) =>
+                  setFormData({ ...formData, brand: text })
+                }
+                style={styles.input}
+                mode="outlined"
+              />
+            </View>
+          </View>
+
+          <View style={styles.inputRow}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Price</Text>
+              <TextInput
+                placeholder="0.00"
+                value={formData.price}
+                onChangeText={(text) =>
+                  setFormData({ ...formData, price: text })
+                }
+                style={styles.input}
+                mode="outlined"
+                keyboardType="numeric"
+              />
+            </View>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Size</Text>
+              <TouchableOpacity
+                style={styles.selectorButton}
+                onPress={() => setShowSizeModal(true)}
+              >
+                <Text style={styles.selectorText}>
+                  {formData.size || "Select"}
+                </Text>
+                <Ionicons name="chevron-down" size={16} color="#6b7280" />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={styles.inputRow}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Category *</Text>
+              <TouchableOpacity
+                style={styles.selectorButton}
+                onPress={() => setShowCategoryModal(true)}
+              >
                 <Text style={styles.selectorText}>
                   {formData.category
                     ? categories.find((c) => c.key === formData.category)?.label
                     : "Select category"}
                 </Text>
-                <Ionicons name="chevron-down" size={20} color="#6b7280" />
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.selectorButton}
-              onPress={() => setShowColorModal(true)}
-            >
-              <Text style={styles.selectorLabel}>Color</Text>
-              <View style={styles.selectorContent}>
+                <Ionicons name="chevron-down" size={16} color="#6b7280" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Color</Text>
+              <TouchableOpacity
+                style={styles.selectorButton}
+                onPress={() => setShowColorModal(true)}
+              >
                 <Text style={styles.selectorText}>
                   {formData.color || "Select color"}
                 </Text>
-                <Ionicons name="chevron-down" size={20} color="#6b7280" />
-              </View>
-            </TouchableOpacity>
+                <Ionicons name="chevron-down" size={16} color="#6b7280" />
+              </TouchableOpacity>
+            </View>
+          </View>
 
-            <TouchableOpacity
-              style={styles.selectorButton}
-              onPress={() => setShowSizeModal(true)}
-            >
-              <Text style={styles.selectorLabel}>Size</Text>
-              <View style={styles.selectorContent}>
-                <Text style={styles.selectorText}>
-                  {formData.size || "Select size"}
-                </Text>
-                <Ionicons name="chevron-down" size={20} color="#6b7280" />
-              </View>
-            </TouchableOpacity>
-
-            <TextInput
-              label="Price"
-              value={formData.price}
-              onChangeText={(text) => setFormData({ ...formData, price: text })}
-              style={styles.input}
-              mode="outlined"
-              keyboardType="numeric"
-            />
-
-            <TextInput
-              label="Notes"
-              value={formData.notes}
-              onChangeText={(text) => setFormData({ ...formData, notes: text })}
-              style={styles.input}
-              mode="outlined"
-              multiline
-              numberOfLines={3}
-            />
-          </Card.Content>
-        </Card>
+          <View style={styles.inputRow}>
+            <View style={[styles.inputGroup, { flex: 1 }]}>
+              <Text style={styles.inputLabel}>Notes</Text>
+              <TextInput
+                placeholder="Add any additional notes..."
+                value={formData.notes}
+                onChangeText={(text) =>
+                  setFormData({ ...formData, notes: text })
+                }
+                style={styles.input}
+                mode="outlined"
+                multiline
+                numberOfLines={3}
+              />
+            </View>
+          </View>
+        </View>
 
         {/* Quick Add Options */}
-        <Card style={styles.quickAddCard}>
-          <Card.Content>
-            <Title style={styles.sectionTitle}>Quick Add</Title>
-            <Paragraph style={styles.quickAddDescription}>
-              Add items quickly by pasting a product URL
-            </Paragraph>
+        <View style={styles.quickAddCard}>
+          <Text style={styles.sectionTitle}>⚡ Quick Add</Text>
+          <Text style={styles.quickAddDescription}>
+            Save time by importing from product URLs
+          </Text>
+          <View style={styles.urlInputContainer}>
             <TextInput
-              label="Product URL"
-              placeholder="https://example.com/product"
-              style={styles.input}
+              placeholder="Paste product URL here..."
+              style={styles.urlInput}
               mode="outlined"
             />
-            <Button
-              mode="outlined"
-              onPress={() => {
-                /* Handle URL import */
-              }}
-              style={styles.quickAddButton}
-            >
-              Import from URL
-            </Button>
-          </Card.Content>
-        </Card>
+            <TouchableOpacity style={styles.importButton}>
+              <Ionicons name="download" size={20} color="#6366f1" />
+              <Text style={styles.importButtonText}>Import</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </ScrollView>
 
       {/* Save Button */}
       <View style={styles.saveButtonContainer}>
-        <Button
-          mode="contained"
+        <TouchableOpacity
+          style={[
+            styles.saveButton,
+            (!formData.name || !formData.category || !formData.image) &&
+              styles.saveButtonDisabled,
+          ]}
           onPress={handleSave}
-          style={styles.saveButton}
           disabled={!formData.name || !formData.category || !formData.image}
         >
-          Add to Wardrobe
-        </Button>
+          <Ionicons name="checkmark-circle" size={20} color="white" />
+          <Text style={styles.saveButtonText}>Add to Wardrobe</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Modals */}
@@ -467,19 +538,40 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f8fafc",
     paddingTop: 60,
-    paddingBottom: 16,
   },
   content: {
     flex: 1,
-    padding: 16,
+    padding: 20,
+  },
+  header: {
+    marginBottom: 24,
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#111827",
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: "#6b7280",
   },
   imageCard: {
-    marginBottom: 16,
-    elevation: 2,
+    backgroundColor: "white",
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: "600",
+    color: "#111827",
     marginBottom: 16,
   },
   imageSection: {
@@ -488,22 +580,26 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     position: "relative",
+    borderRadius: 16,
+    overflow: "hidden",
   },
   itemImage: {
     width: 200,
     height: 200,
-    borderRadius: 12,
+    borderRadius: 16,
   },
   removeImageButton: {
     position: "absolute",
     top: 8,
     right: 8,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    borderRadius: 12,
+    padding: 4,
   },
   imagePlaceholder: {
     width: 200,
     height: 200,
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 2,
     borderColor: "#e5e7eb",
     borderStyle: "dashed",
@@ -511,97 +607,218 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#f9fafb",
   },
+  placeholderIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "#e0e7ff",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
+  },
   imagePlaceholderText: {
-    marginTop: 8,
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#374151",
+    textAlign: "center",
+    marginBottom: 4,
+  },
+  imagePlaceholderSubtext: {
+    fontSize: 14,
     color: "#6b7280",
     textAlign: "center",
   },
-  methodSelector: {
-    marginTop: 8,
+  methodSelectorContainer: {
+    flexDirection: "row",
+    backgroundColor: "#f3f4f6",
+    borderRadius: 12,
+    padding: 4,
+  },
+  methodButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  methodButtonActive: {
+    backgroundColor: "white",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  methodButtonText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#6b7280",
+    marginLeft: 8,
+  },
+  methodButtonTextActive: {
+    color: "#6366f1",
+    fontWeight: "600",
   },
   formCard: {
+    backgroundColor: "white",
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  inputRow: {
+    flexDirection: "row",
     marginBottom: 16,
-    elevation: 2,
+    gap: 12,
+  },
+  inputGroup: {
+    flex: 1,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#374151",
+    marginBottom: 8,
   },
   input: {
-    marginBottom: 16,
+    backgroundColor: "white",
   },
   selectorButton: {
-    marginBottom: 16,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
-  },
-  selectorLabel: {
-    fontSize: 12,
-    color: "#6b7280",
-    marginBottom: 4,
-  },
-  selectorContent: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "white",
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 16,
+    minHeight: 56,
   },
   selectorText: {
     fontSize: 16,
-    color: "#1f2937",
+    color: "#374151",
   },
   quickAddCard: {
-    marginBottom: 16,
-    elevation: 2,
+    backgroundColor: "white",
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   quickAddDescription: {
+    fontSize: 14,
     color: "#6b7280",
     marginBottom: 16,
+    lineHeight: 20,
   },
-  quickAddButton: {
-    marginTop: 8,
+  urlInputContainer: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 12,
+  },
+  urlInput: {
+    flex: 1,
+    backgroundColor: "white",
+  },
+  importButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#e0e7ff",
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderRadius: 8,
+    minHeight: 56,
+  },
+  importButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#6366f1",
+    marginLeft: 6,
   },
   saveButtonContainer: {
-    padding: 16,
+    padding: 20,
     backgroundColor: "white",
     borderTopWidth: 1,
     borderTopColor: "#e5e7eb",
   },
   saveButton: {
-    borderRadius: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#6366f1",
+    paddingVertical: 16,
+    borderRadius: 12,
+    shadowColor: "#6366f1",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  saveButtonDisabled: {
+    backgroundColor: "#d1d5db",
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  saveButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "white",
+    marginLeft: 8,
   },
   modalContainer: {
     backgroundColor: "white",
     margin: 20,
-    borderRadius: 12,
-    padding: 20,
+    borderRadius: 16,
+    padding: 24,
     maxHeight: "80%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 16,
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#111827",
+    marginBottom: 20,
     textAlign: "center",
   },
   categoryGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
+    gap: 8,
   },
   categoryOption: {
     alignItems: "center",
-    padding: 12,
-    margin: 4,
-    borderRadius: 8,
-    borderWidth: 1,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 2,
     borderColor: "#e5e7eb",
-    backgroundColor: "white",
-    width: (width - 80) / 2,
+    backgroundColor: "#f9fafb",
+    width: (width - 100) / 2,
   },
   categoryOptionSelected: {
     borderColor: "#6366f1",
     backgroundColor: "#e0e7ff",
   },
   categoryOptionText: {
-    fontSize: 12,
+    fontSize: 14,
+    fontWeight: "500",
     color: "#6b7280",
-    marginTop: 4,
+    marginTop: 8,
     textAlign: "center",
   },
   categoryOptionTextSelected: {
@@ -611,15 +828,15 @@ const styles = StyleSheet.create({
   colorGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
+    gap: 8,
   },
   colorOption: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    margin: 4,
-    borderRadius: 20,
-    borderWidth: 1,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 24,
+    borderWidth: 2,
     borderColor: "#e5e7eb",
-    backgroundColor: "white",
+    backgroundColor: "#f9fafb",
   },
   colorOptionSelected: {
     borderColor: "#6366f1",
@@ -627,6 +844,7 @@ const styles = StyleSheet.create({
   },
   colorOptionText: {
     fontSize: 14,
+    fontWeight: "500",
     color: "#6b7280",
   },
   colorOptionTextSelected: {
@@ -636,16 +854,16 @@ const styles = StyleSheet.create({
   sizeGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
+    gap: 8,
   },
   sizeOption: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    margin: 4,
-    borderRadius: 20,
-    borderWidth: 1,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 24,
+    borderWidth: 2,
     borderColor: "#e5e7eb",
-    backgroundColor: "white",
-    minWidth: 50,
+    backgroundColor: "#f9fafb",
+    minWidth: 60,
     alignItems: "center",
   },
   sizeOptionSelected: {
@@ -654,6 +872,7 @@ const styles = StyleSheet.create({
   },
   sizeOptionText: {
     fontSize: 14,
+    fontWeight: "500",
     color: "#6b7280",
   },
   sizeOptionTextSelected: {

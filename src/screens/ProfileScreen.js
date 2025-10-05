@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Image,
   RefreshControl,
+  Alert,
 } from "react-native";
 import {
   Card,
@@ -28,11 +29,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSelector, useDispatch } from "react-redux";
 import { updatePreferences } from "../store/slices/preferencesSlice";
 import { startTour } from "../store/slices/tourSlice";
+import { logout } from "../store/slices/userSlice";
 
 const { width } = Dimensions.get("window");
 
 const ProfileScreen = ({ navigation }) => {
-  const user = useSelector((state) => state.user.profile);
+  const user = useSelector((state) => state.user.user);
   const wardrobe = useSelector((state) => state.wardrobe.items);
   const outfits = useSelector((state) => state.outfits.outfits);
   const preferences = useSelector((state) => state.preferences.settings);
@@ -54,6 +56,24 @@ const ProfileScreen = ({ navigation }) => {
 
   const handleStartTour = () => {
     dispatch(startTour());
+  };
+
+  const handleLogout = () => {
+    Alert.alert(
+      "Logout",
+      "Are you sure you want to logout? You will need to sign in again.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Logout",
+          style: "destructive",
+          onPress: () => {
+            dispatch(logout());
+            // The App.js will automatically show Login screen due to authentication state change
+          },
+        },
+      ]
+    );
   };
 
   const ProfileHeader = () => (
@@ -92,7 +112,7 @@ const ProfileScreen = ({ navigation }) => {
         </View>
         <TouchableOpacity
           style={styles.editButton}
-          onPress={() => console.log("Edit profile")}
+          onPress={() => navigation.navigate("EditProfile")}
         >
           <Ionicons name="create" size={20} color="white" />
         </TouchableOpacity>
@@ -258,19 +278,12 @@ const ProfileScreen = ({ navigation }) => {
               />
               <Divider />
               <List.Item
-                title="Privacy & Security"
-                description="Manage your data and privacy"
-                left={(props) => <List.Icon {...props} icon="shield" />}
+                title="Logout"
+                description="Sign out of your account"
+                left={(props) => <List.Icon {...props} icon="logout" />}
                 right={(props) => <List.Icon {...props} icon="chevron-right" />}
-                onPress={() => console.log("Privacy settings")}
-              />
-              <Divider />
-              <List.Item
-                title="Help & Support"
-                description="Get help and contact support"
-                left={(props) => <List.Icon {...props} icon="help-circle" />}
-                right={(props) => <List.Icon {...props} icon="chevron-right" />}
-                onPress={() => console.log("Help & Support")}
+                onPress={handleLogout}
+                titleStyle={{ color: "#ef4444" }}
               />
             </Card.Content>
           </Card>

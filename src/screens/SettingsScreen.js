@@ -24,6 +24,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useSelector, useDispatch } from "react-redux";
 import { updatePreferences } from "../store/slices/preferencesSlice";
+import { logout } from "../store/slices/userSlice";
 
 const { width } = Dimensions.get("window");
 
@@ -98,21 +99,33 @@ const SettingsScreen = ({ navigation }) => {
         <Title style={styles.sectionTitle}>Profile</Title>
         <List.Item
           title="Edit Profile"
-          description="Update your personal information"
+          description="Update your personal information and body measurements"
           left={(props) => <List.Icon {...props} icon="account-edit" />}
           right={(props) => <List.Icon {...props} icon="chevron-right" />}
-          onPress={() => {
-            /* Navigate to profile edit */
-          }}
+          onPress={() => navigation.navigate("EditProfile")}
         />
         <Divider />
         <List.Item
-          title="Privacy Settings"
-          description="Manage your data and privacy"
-          left={(props) => <List.Icon {...props} icon="shield-account" />}
+          title="Logout"
+          description="Sign out of your account"
+          left={(props) => <List.Icon {...props} icon="logout" />}
           right={(props) => <List.Icon {...props} icon="chevron-right" />}
           onPress={() => {
-            /* Navigate to privacy settings */
+            Alert.alert(
+              "Logout",
+              "Are you sure you want to logout? You will need to sign in again.",
+              [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Logout",
+                  style: "destructive",
+                  onPress: () => {
+                    dispatch(logout());
+                    // The App.js will automatically show Login screen due to authentication state change
+                  },
+                },
+              ]
+            );
           }}
         />
       </Card.Content>
@@ -170,145 +183,7 @@ const SettingsScreen = ({ navigation }) => {
     </Card>
   );
 
-  const DataSection = () => (
-    <Card style={styles.sectionCard}>
-      <Card.Content>
-        <Title style={styles.sectionTitle}>Data & Storage</Title>
-
-        <View style={styles.dataStats}>
-          <View style={styles.dataStat}>
-            <Text style={styles.dataStatNumber}>{wardrobe.length}</Text>
-            <Text style={styles.dataStatLabel}>Items</Text>
-          </View>
-          <View style={styles.dataStat}>
-            <Text style={styles.dataStatNumber}>{outfits.length}</Text>
-            <Text style={styles.dataStatLabel}>Outfits</Text>
-          </View>
-          <View style={styles.dataStat}>
-            <Text style={styles.dataStatNumber}>2.4</Text>
-            <Text style={styles.dataStatLabel}>MB</Text>
-          </View>
-        </View>
-
-        <Divider style={styles.divider} />
-
-        <List.Item
-          title="Export Data"
-          description="Download your wardrobe data"
-          left={(props) => <List.Icon {...props} icon="download" />}
-          right={(props) => <List.Icon {...props} icon="chevron-right" />}
-          onPress={handleExportData}
-        />
-
-        <Divider />
-
-        <List.Item
-          title="Clear All Data"
-          description="Permanently delete all data"
-          left={(props) => <List.Icon {...props} icon="delete" />}
-          right={(props) => <List.Icon {...props} icon="chevron-right" />}
-          onPress={handleClearData}
-          titleStyle={styles.dangerText}
-        />
-      </Card.Content>
-    </Card>
-  );
-
-  const AppSection = () => (
-    <Card style={styles.sectionCard}>
-      <Card.Content>
-        <Title style={styles.sectionTitle}>App Settings</Title>
-
-        <List.Item
-          title="Theme"
-          description="Light mode"
-          left={(props) => <List.Icon {...props} icon="theme-light-dark" />}
-          right={(props) => <List.Icon {...props} icon="chevron-right" />}
-          onPress={() => {
-            /* Navigate to theme settings */
-          }}
-        />
-
-        <Divider />
-
-        <List.Item
-          title="Language"
-          description="English"
-          left={(props) => <List.Icon {...props} icon="translate" />}
-          right={(props) => <List.Icon {...props} icon="chevron-right" />}
-          onPress={() => {
-            /* Navigate to language settings */
-          }}
-        />
-
-        <Divider />
-
-        <List.Item
-          title="Units"
-          description="Metric (Celsius, cm)"
-          left={(props) => <List.Icon {...props} icon="ruler" />}
-          right={(props) => <List.Icon {...props} icon="chevron-right" />}
-          onPress={() => {
-            /* Navigate to units settings */
-          }}
-        />
-      </Card.Content>
-    </Card>
-  );
-
-  const SupportSection = () => (
-    <Card style={styles.sectionCard}>
-      <Card.Content>
-        <Title style={styles.sectionTitle}>Support</Title>
-
-        <List.Item
-          title="Help Center"
-          description="Get help and tutorials"
-          left={(props) => <List.Icon {...props} icon="help-circle" />}
-          right={(props) => <List.Icon {...props} icon="chevron-right" />}
-          onPress={() => {
-            /* Navigate to help */
-          }}
-        />
-
-        <Divider />
-
-        <List.Item
-          title="Contact Support"
-          description="Get in touch with our team"
-          left={(props) => <List.Icon {...props} icon="message" />}
-          right={(props) => <List.Icon {...props} icon="chevron-right" />}
-          onPress={() => {
-            /* Navigate to contact */
-          }}
-        />
-
-        <Divider />
-
-        <List.Item
-          title="Rate App"
-          description="Rate us on the App Store"
-          left={(props) => <List.Icon {...props} icon="star" />}
-          right={(props) => <List.Icon {...props} icon="chevron-right" />}
-          onPress={() => {
-            /* Navigate to rating */
-          }}
-        />
-
-        <Divider />
-
-        <List.Item
-          title="About"
-          description="Version 1.0.0"
-          left={(props) => <List.Icon {...props} icon="information" />}
-          right={(props) => <List.Icon {...props} icon="chevron-right" />}
-          onPress={() => {
-            /* Navigate to about */
-          }}
-        />
-      </Card.Content>
-    </Card>
-  );
+  // Removed DataSection, AppSection, and SupportSection as they don't belong in style preferences
 
   const BudgetModal = () => (
     <View style={styles.modalOverlay}>
@@ -347,9 +222,6 @@ const SettingsScreen = ({ navigation }) => {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <ProfileSection />
         <PreferencesSection />
-        <DataSection />
-        <AppSection />
-        <SupportSection />
       </ScrollView>
 
       {showBudgetInput && <BudgetModal />}
