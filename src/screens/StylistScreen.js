@@ -6,25 +6,17 @@ import {
   Dimensions,
   TouchableOpacity,
   Image,
-  FlatList,
 } from "react-native";
 import {
   Card,
   Title,
   Paragraph,
   Button,
-  Chip,
-  Surface,
   Text,
-  Searchbar,
-  FAB,
-  SegmentedButtons,
-  IconButton,
-  Badge,
-  ProgressBar,
+  Surface,
+  Divider,
 } from "react-native-paper";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { useSelector } from "react-redux";
 
 const { width } = Dimensions.get("window");
@@ -38,266 +30,112 @@ const StylistScreen = ({ navigation }) => {
   const [selectedOccasion, setSelectedOccasion] = useState("daily");
 
   const styleOptions = [
-    { key: "casual", label: "Casual", icon: "shirt-outline" },
-    { key: "formal", label: "Formal", icon: "business" },
-    { key: "sporty", label: "Sporty", icon: "fitness" },
-    { key: "vintage", label: "Vintage", icon: "time" },
-    { key: "minimalist", label: "Minimalist", icon: "remove" },
-    { key: "bohemian", label: "Bohemian", icon: "flower" },
+    { key: "casual", label: "Casual" },
+    { key: "formal", label: "Formal" },
+    { key: "sporty", label: "Sporty" },
+    { key: "minimalist", label: "Minimalist" },
   ];
 
   const occasionOptions = [
     { key: "daily", label: "Daily" },
     { key: "work", label: "Work" },
-    { key: "date", label: "Date Night" },
+    { key: "date", label: "Date" },
     { key: "party", label: "Party" },
-    { key: "travel", label: "Travel" },
-    { key: "gym", label: "Gym" },
   ];
 
   const aiRecommendations = useMemo(() => {
-    // Mock AI recommendations based on user preferences and wardrobe
-    const recommendations = [
+    return [
       {
         id: "1",
-        title: "Perfect for Today",
-        description: "Based on your style and the weather",
-        confidence: 95,
-        items: wardrobe.slice(0, 4),
-        reason: "Great color combination that matches your preferences",
-        price: 0,
-        sustainability: "high",
+        title: "Today's Look",
+        items: wardrobe.slice(0, 3),
+        reason: "Perfect for your style and weather",
       },
       {
         id: "2",
-        title: "Trendy & Fresh",
-        description: "Try something new this week",
-        confidence: 87,
-        items: wardrobe.slice(1, 5),
-        reason: "Incorporates current trends while staying true to your style",
-        price: 0,
-        sustainability: "medium",
-      },
-      {
-        id: "3",
-        title: "Wardrobe Gap",
-        description: "Complete your look with these essentials",
-        confidence: 92,
-        items: [], // This would be shopping recommendations
-        reason: "Missing key pieces for a complete wardrobe",
-        price: 150,
-        sustainability: "high",
-        isShopping: true,
+        title: "Fresh Style",
+        items: wardrobe.slice(1, 4),
+        reason: "Try something new this week",
       },
     ];
-    return recommendations;
   }, [wardrobe, preferences, weather]);
 
-  const wardrobeAnalysis = useMemo(() => {
+  const wardrobeStats = useMemo(() => {
     const totalItems = wardrobe.length;
-    const categories = wardrobe.reduce((acc, item) => {
-      acc[item.category] = (acc[item.category] || 0) + 1;
-      return acc;
-    }, {});
-
-    const colors = wardrobe.reduce((acc, item) => {
-      acc[item.color] = (acc[item.color] || 0) + 1;
-      return acc;
-    }, {});
-
     const mostWorn = [...wardrobe]
       .sort((a, b) => (b.wearCount || 0) - (a.wearCount || 0))
-      .slice(0, 5);
-
-    const leastWorn = [...wardrobe]
-      .sort((a, b) => (a.wearCount || 0) - (b.wearCount || 0))
-      .slice(0, 5);
+      .slice(0, 3);
 
     return {
       totalItems,
-      categories,
-      colors,
       mostWorn,
-      leastWorn,
-      diversityScore: Math.min(100, Object.keys(categories).length * 15),
-      colorScore: Math.min(100, Object.keys(colors).length * 12),
     };
   }, [wardrobe]);
 
   const RecommendationCard = ({ recommendation }) => (
-    <Card style={styles.recommendationCard}>
-      <LinearGradient
-        colors={["#6366f1", "#8b5cf6"]}
-        style={styles.recommendationGradient}
-      >
+    <Surface style={styles.recommendationCard} elevation={2}>
+      <View style={styles.recommendationContent}>
         <View style={styles.recommendationHeader}>
-          <View>
-            <Title style={styles.recommendationTitle}>
-              {recommendation.title}
-            </Title>
-            <Paragraph style={styles.recommendationDescription}>
-              {recommendation.description}
-            </Paragraph>
-          </View>
-          <View style={styles.confidenceContainer}>
-            <Text style={styles.confidenceText}>
-              {recommendation.confidence}%
-            </Text>
-            <Text style={styles.confidenceLabel}>Match</Text>
-          </View>
+          <Ionicons name="sparkles" size={20} color="#667eea" />
+          <Text style={styles.recommendationTitle}>{recommendation.title}</Text>
         </View>
-        <ProgressBar
-          progress={recommendation.confidence / 100}
-          color="white"
-          style={styles.confidenceBar}
-        />
-      </LinearGradient>
-
-      <Card.Content style={styles.recommendationContent}>
-        {recommendation.isShopping ? (
-          <View style={styles.shoppingContent}>
-            <Text style={styles.shoppingTitle}>Recommended Items to Buy:</Text>
-            <View style={styles.shoppingItems}>
-              <View style={styles.shoppingItem}>
-                <Ionicons name="shirt" size={24} color="#6366f1" />
-                <Text style={styles.shoppingItemText}>White Button-Up</Text>
-                <Text style={styles.shoppingItemPrice}>$45</Text>
-              </View>
-              <View style={styles.shoppingItem}>
-                <Ionicons name="pants" size={24} color="#6366f1" />
-                <Text style={styles.shoppingItemText}>Black Trousers</Text>
-                <Text style={styles.shoppingItemPrice}>$65</Text>
-              </View>
-              <View style={styles.shoppingItem}>
-                <Ionicons name="footsteps" size={24} color="#6366f1" />
-                <Text style={styles.shoppingItemText}>Brown Loafers</Text>
-                <Text style={styles.shoppingItemPrice}>$40</Text>
-              </View>
+        <View style={styles.outfitItems}>
+          {recommendation.items.map((item, index) => (
+            <View key={index} style={styles.outfitItemContainer}>
+              <Image
+                source={{ uri: item.image }}
+                style={styles.outfitItemImage}
+              />
             </View>
-            <View style={styles.shoppingFooter}>
-              <Text style={styles.totalPrice}>
-                Total: ${recommendation.price}
-              </Text>
-              <Button mode="contained" compact>
-                Shop Now
-              </Button>
-            </View>
-          </View>
-        ) : (
-          <View style={styles.outfitContent}>
-            <View style={styles.outfitItems}>
-              {recommendation.items.map((item, index) => (
-                <Image
-                  key={index}
-                  source={{ uri: item.image }}
-                  style={styles.outfitItemImage}
-                />
-              ))}
-            </View>
-            <Text style={styles.recommendationReason}>
-              {recommendation.reason}
-            </Text>
-            <View style={styles.recommendationActions}>
-              <Button mode="outlined" compact>
-                View Details
-              </Button>
-              <Button mode="contained" compact>
-                Try This Look
-              </Button>
-            </View>
-          </View>
-        )}
-      </Card.Content>
-    </Card>
-  );
-
-  const AnalysisCard = ({ title, children }) => (
-    <Card style={styles.analysisCard}>
-      <Card.Content>
-        <Title style={styles.analysisTitle}>{title}</Title>
-        {children}
-      </Card.Content>
-    </Card>
+          ))}
+        </View>
+        <Text style={styles.recommendationReason}>{recommendation.reason}</Text>
+        <Button
+          mode="contained"
+          compact
+          style={styles.tryButton}
+          labelStyle={styles.tryButtonLabel}
+        >
+          Try This Look
+        </Button>
+      </View>
+    </Surface>
   );
 
   const WardrobeInsights = () => (
     <View style={styles.insightsContainer}>
-      <Text style={styles.sectionTitle}>Wardrobe Insights</Text>
+      <Text style={styles.sectionTitle}>Your Wardrobe</Text>
 
-      <AnalysisCard title="Diversity Score">
-        <View style={styles.scoreContainer}>
-          <Text style={styles.scoreNumber}>
-            {wardrobeAnalysis.diversityScore}
-          </Text>
-          <Text style={styles.scoreLabel}>out of 100</Text>
+      <Surface style={styles.statsCard} elevation={2}>
+        <View style={styles.statsIconContainer}>
+          <Ionicons name="shirt" size={32} color="#667eea" />
         </View>
-        <ProgressBar
-          progress={wardrobeAnalysis.diversityScore / 100}
-          color="#10b981"
-          style={styles.scoreBar}
-        />
-        <Text style={styles.scoreDescription}>
-          Your wardrobe has good variety across categories
-        </Text>
-      </AnalysisCard>
+        <Text style={styles.statsNumber}>{wardrobeStats.totalItems}</Text>
+        <Text style={styles.statsLabel}>Items in wardrobe</Text>
+      </Surface>
 
-      <AnalysisCard title="Color Distribution">
-        <View style={styles.colorDistribution}>
-          {Object.entries(wardrobeAnalysis.colors).map(([color, count]) => (
-            <View key={color} style={styles.colorItem}>
-              <View
-                style={[
-                  styles.colorSwatch,
-                  { backgroundColor: color.toLowerCase() },
-                ]}
-              />
-              <Text style={styles.colorName}>{color}</Text>
-              <Text style={styles.colorCount}>{count}</Text>
-            </View>
-          ))}
-        </View>
-      </AnalysisCard>
-
-      <AnalysisCard title="Most Worn Items">
-        <View style={styles.itemList}>
-          {wardrobeAnalysis.mostWorn.map((item, index) => (
-            <View key={index} style={styles.itemRow}>
+      <Text style={styles.subsectionTitle}>Most Worn</Text>
+      <View style={styles.itemList}>
+        {wardrobeStats.mostWorn.map((item, index) => (
+          <Surface key={index} style={styles.itemRow} elevation={1}>
+            <View style={styles.itemImageContainer}>
               <Image
                 source={{ uri: item.image }}
                 style={styles.itemThumbnail}
               />
-              <View style={styles.itemInfo}>
-                <Text style={styles.itemName}>{item.name}</Text>
-                <Text style={styles.itemWearCount}>
-                  Worn {item.wearCount || 0} times
-                </Text>
-              </View>
             </View>
-          ))}
-        </View>
-      </AnalysisCard>
-
-      <AnalysisCard title="Underutilized Items">
-        <View style={styles.itemList}>
-          {wardrobeAnalysis.leastWorn.map((item, index) => (
-            <View key={index} style={styles.itemRow}>
-              <Image
-                source={{ uri: item.image }}
-                style={styles.itemThumbnail}
-              />
-              <View style={styles.itemInfo}>
-                <Text style={styles.itemName}>{item.name}</Text>
-                <Text style={styles.itemWearCount}>
-                  Worn {item.wearCount || 0} times
-                </Text>
-              </View>
-              <Button mode="outlined" compact>
-                Style It
-              </Button>
+            <View style={styles.itemInfo}>
+              <Text style={styles.itemName}>{item.name}</Text>
+              <Text style={styles.itemWearCount}>
+                {item.wearCount || 0} times worn
+              </Text>
             </View>
-          ))}
-        </View>
-      </AnalysisCard>
+            <View style={styles.itemBadge}>
+              <Text style={styles.badgeText}>★</Text>
+            </View>
+          </Surface>
+        ))}
+      </View>
     </View>
   );
 
@@ -305,91 +143,114 @@ const StylistScreen = ({ navigation }) => {
     <View style={styles.preferencesContainer}>
       <Text style={styles.sectionTitle}>Style Preferences</Text>
 
-      <Card style={styles.preferencesCard}>
-        <Card.Content>
-          <Title>Style Types</Title>
-          <View style={styles.styleGrid}>
-            {styleOptions.map((style) => (
-              <TouchableOpacity
-                key={style.key}
-                style={[
-                  styles.styleOption,
-                  selectedStyle === style.key && styles.styleOptionSelected,
-                ]}
-                onPress={() => setSelectedStyle(style.key)}
-              >
-                <Ionicons
-                  name={style.icon}
-                  size={24}
-                  color={selectedStyle === style.key ? "#6366f1" : "#6b7280"}
-                />
-                <Text
-                  style={[
-                    styles.styleOptionText,
-                    selectedStyle === style.key &&
-                      styles.styleOptionTextSelected,
-                  ]}
-                >
-                  {style.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </Card.Content>
-      </Card>
+      <Text style={styles.subsectionTitle}>Style Types</Text>
+      <View style={styles.styleGrid}>
+        {styleOptions.map((style) => (
+          <TouchableOpacity
+            key={style.key}
+            style={[
+              styles.styleOption,
+              selectedStyle === style.key && styles.styleOptionSelected,
+            ]}
+            onPress={() => setSelectedStyle(style.key)}
+          >
+            <Text
+              style={[
+                styles.styleOptionText,
+                selectedStyle === style.key && styles.styleOptionTextSelected,
+              ]}
+            >
+              {style.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
-      <Card style={styles.preferencesCard}>
-        <Card.Content>
-          <Title>Occasions</Title>
-          <View style={styles.occasionGrid}>
-            {occasionOptions.map((occasion) => (
-              <TouchableOpacity
-                key={occasion.key}
-                style={[
-                  styles.occasionOption,
-                  selectedOccasion === occasion.key &&
-                    styles.occasionOptionSelected,
-                ]}
-                onPress={() => setSelectedOccasion(occasion.key)}
-              >
-                <Text
-                  style={[
-                    styles.occasionOptionText,
-                    selectedOccasion === occasion.key &&
-                      styles.occasionOptionTextSelected,
-                  ]}
-                >
-                  {occasion.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </Card.Content>
-      </Card>
+      <Text style={styles.subsectionTitle}>Occasions</Text>
+      <View style={styles.occasionGrid}>
+        {occasionOptions.map((occasion) => (
+          <TouchableOpacity
+            key={occasion.key}
+            style={[
+              styles.occasionOption,
+              selectedOccasion === occasion.key &&
+                styles.occasionOptionSelected,
+            ]}
+            onPress={() => setSelectedOccasion(occasion.key)}
+          >
+            <Text
+              style={[
+                styles.occasionOptionText,
+                selectedOccasion === occasion.key &&
+                  styles.occasionOptionTextSelected,
+              ]}
+            >
+              {occasion.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
     </View>
   );
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+      {/* Simple Header */}
       <View style={styles.header}>
-        <SegmentedButtons
-          value={selectedTab}
-          onValueChange={setSelectedTab}
-          buttons={[
-            { value: "recommendations", label: "AI Stylist", icon: "sparkles" },
-            { value: "insights", label: "Insights", icon: "analytics" },
-            { value: "preferences", label: "Preferences", icon: "settings" },
-          ]}
-          style={styles.segmentedButtons}
-        />
+        <Text style={styles.headerTitle}>Stylist</Text>
+        <View style={styles.tabContainer}>
+          <TouchableOpacity
+            style={[
+              styles.tab,
+              selectedTab === "recommendations" && styles.activeTab,
+            ]}
+            onPress={() => setSelectedTab("recommendations")}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                selectedTab === "recommendations" && styles.activeTabText,
+              ]}
+            >
+              Recommendations
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, selectedTab === "insights" && styles.activeTab]}
+            onPress={() => setSelectedTab("insights")}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                selectedTab === "insights" && styles.activeTabText,
+              ]}
+            >
+              Insights
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.tab,
+              selectedTab === "preferences" && styles.activeTab,
+            ]}
+            onPress={() => setSelectedTab("preferences")}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                selectedTab === "preferences" && styles.activeTabText,
+              ]}
+            >
+              Preferences
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Content */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {selectedTab === "recommendations" && (
           <View style={styles.recommendationsContainer}>
-            <Text style={styles.sectionTitle}>AI Recommendations</Text>
             {aiRecommendations.map((recommendation) => (
               <RecommendationCard
                 key={recommendation.id}
@@ -403,15 +264,6 @@ const StylistScreen = ({ navigation }) => {
 
         {selectedTab === "preferences" && <StylePreferences />}
       </ScrollView>
-
-      {/* Floating Action Button */}
-      <FAB
-        icon="refresh"
-        style={styles.fab}
-        onPress={() => {
-          /* Regenerate recommendations */
-        }}
-      />
     </View>
   );
 };
@@ -419,189 +271,189 @@ const StylistScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8fafc",
+    backgroundColor: "#fafafa",
   },
   header: {
-    padding: 16,
-    paddingBottom: 8,
     paddingTop: 60,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    backgroundColor: "#ffffff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e8e8e8",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
-  segmentedButtons: {
-    backgroundColor: "white",
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#2d3748",
+    marginBottom: 20,
+    letterSpacing: -0.5,
+  },
+  tabContainer: {
+    flexDirection: "row",
+    backgroundColor: "#f7fafc",
+    borderRadius: 12,
+    padding: 4,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  activeTab: {
+    backgroundColor: "#667eea",
+    shadowColor: "#667eea",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 3,
+  },
+  tabText: {
+    fontSize: 14,
+    color: "#718096",
+    fontWeight: "600",
+  },
+  activeTabText: {
+    color: "#ffffff",
+    fontWeight: "700",
   },
   content: {
     flex: 1,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#1f2937",
-    marginBottom: 16,
-    paddingHorizontal: 16,
-  },
   recommendationsContainer: {
-    padding: 16,
+    padding: 20,
   },
   recommendationCard: {
-    marginBottom: 16,
+    marginBottom: 20,
+    borderRadius: 16,
+    backgroundColor: "#ffffff",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
     elevation: 4,
   },
-  recommendationGradient: {
+  recommendationContent: {
     padding: 20,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
   },
   recommendationHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 12,
+    alignItems: "center",
+    marginBottom: 16,
   },
   recommendationTitle: {
-    color: "white",
     fontSize: 18,
-    fontWeight: "bold",
-  },
-  recommendationDescription: {
-    color: "white",
-    opacity: 0.9,
-    marginTop: 4,
-  },
-  confidenceContainer: {
-    alignItems: "center",
-  },
-  confidenceText: {
-    color: "white",
-    fontSize: 24,
-    fontWeight: "bold",
-  },
-  confidenceLabel: {
-    color: "white",
-    opacity: 0.8,
-    fontSize: 12,
-  },
-  confidenceBar: {
-    marginTop: 8,
-  },
-  recommendationContent: {
-    padding: 16,
-  },
-  outfitContent: {
-    alignItems: "center",
+    fontWeight: "700",
+    color: "#2d3748",
+    marginLeft: 8,
+    letterSpacing: -0.3,
   },
   outfitItems: {
     flexDirection: "row",
-    marginBottom: 12,
+    marginBottom: 16,
+    justifyContent: "center",
+  },
+  outfitItemContainer: {
+    marginHorizontal: 4,
+    borderRadius: 12,
+    padding: 4,
+    backgroundColor: "#f7fafc",
   },
   outfitItemImage: {
     width: 60,
     height: 60,
     borderRadius: 8,
-    marginRight: 8,
+    backgroundColor: "#f5f5f5",
   },
   recommendationReason: {
+    fontSize: 14,
+    color: "#718096",
+    marginBottom: 16,
+    lineHeight: 20,
     textAlign: "center",
-    color: "#6b7280",
-    marginBottom: 16,
   },
-  recommendationActions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: "100%",
+  tryButton: {
+    alignSelf: "center",
+    backgroundColor: "#667eea",
+    borderRadius: 12,
+    shadowColor: "#667eea",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 3,
   },
-  shoppingContent: {
-    width: "100%",
-  },
-  shoppingTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 12,
-  },
-  shoppingItems: {
-    marginBottom: 16,
-  },
-  shoppingItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
-  },
-  shoppingItemText: {
-    flex: 1,
-    marginLeft: 12,
-    fontSize: 14,
-  },
-  shoppingItemPrice: {
+  tryButtonLabel: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#10b981",
-  },
-  shoppingFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  totalPrice: {
-    fontSize: 16,
-    fontWeight: "bold",
+    color: "#ffffff",
   },
   insightsContainer: {
-    padding: 16,
+    padding: 20,
   },
-  analysisCard: {
-    marginBottom: 16,
-    elevation: 2,
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#2d3748",
+    marginBottom: 20,
+    letterSpacing: -0.3,
   },
-  analysisTitle: {
+  subsectionTitle: {
     fontSize: 16,
     fontWeight: "600",
-    marginBottom: 12,
+    color: "#4a5568",
+    marginBottom: 16,
+    marginTop: 24,
   },
-  scoreContainer: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    marginBottom: 8,
-  },
-  scoreNumber: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#10b981",
-  },
-  scoreLabel: {
-    fontSize: 14,
-    color: "#6b7280",
-    marginLeft: 4,
-  },
-  scoreBar: {
-    marginBottom: 8,
-  },
-  scoreDescription: {
-    fontSize: 14,
-    color: "#6b7280",
-  },
-  colorDistribution: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-  },
-  colorItem: {
+  statsCard: {
+    padding: 24,
+    borderRadius: 16,
     alignItems: "center",
-    marginRight: 16,
-    marginBottom: 8,
+    marginBottom: 20,
+    backgroundColor: "#ffffff",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 4,
   },
-  colorSwatch: {
-    width: 24,
-    height: 24,
+  statsIconContainer: {
+    marginBottom: 12,
+    padding: 12,
     borderRadius: 12,
+    backgroundColor: "#f0f4ff",
+  },
+  statsNumber: {
+    fontSize: 36,
+    fontWeight: "700",
+    color: "#667eea",
     marginBottom: 4,
+    letterSpacing: -1,
   },
-  colorName: {
-    fontSize: 12,
-    color: "#6b7280",
-  },
-  colorCount: {
-    fontSize: 10,
-    color: "#9ca3af",
+  statsLabel: {
+    fontSize: 14,
+    color: "#718096",
+    fontWeight: "500",
   },
   itemList: {
     marginTop: 8,
@@ -609,96 +461,137 @@ const styles = StyleSheet.create({
   itemRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f3f4f6",
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 8,
+    backgroundColor: "#ffffff",
+  },
+  itemImageContainer: {
+    marginRight: 12,
+    borderRadius: 8,
+    padding: 4,
+    backgroundColor: "#f7fafc",
   },
   itemThumbnail: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    marginRight: 12,
+    width: 48,
+    height: 48,
+    borderRadius: 6,
+    backgroundColor: "#f5f5f5",
   },
   itemInfo: {
     flex: 1,
   },
   itemName: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#1f2937",
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#2d3748",
+    marginBottom: 4,
   },
   itemWearCount: {
+    fontSize: 13,
+    color: "#718096",
+    fontWeight: "500",
+  },
+  itemBadge: {
+    backgroundColor: "#fef5e7",
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  badgeText: {
     fontSize: 12,
-    color: "#6b7280",
+    color: "#f6ad55",
+    fontWeight: "600",
   },
   preferencesContainer: {
-    padding: 16,
-  },
-  preferencesCard: {
-    marginBottom: 16,
-    elevation: 2,
+    padding: 20,
   },
   styleGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    marginTop: 8,
+    marginBottom: 20,
   },
   styleOption: {
-    alignItems: "center",
-    padding: 12,
-    margin: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    backgroundColor: "white",
-    minWidth: 80,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    marginRight: 8,
+    marginBottom: 8,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: "#e2e8f0",
+    backgroundColor: "#ffffff",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   styleOptionSelected: {
-    borderColor: "#6366f1",
-    backgroundColor: "#e0e7ff",
+    borderColor: "#667eea",
+    backgroundColor: "#667eea",
+    shadowColor: "#667eea",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 3,
   },
   styleOptionText: {
-    fontSize: 12,
-    color: "#6b7280",
-    marginTop: 4,
-    textAlign: "center",
+    fontSize: 14,
+    color: "#718096",
+    fontWeight: "600",
   },
   styleOptionTextSelected: {
-    color: "#6366f1",
-    fontWeight: "600",
+    color: "#ffffff",
+    fontWeight: "700",
   },
   occasionGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    marginTop: 8,
   },
   occasionOption: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    margin: 4,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    backgroundColor: "white",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    marginRight: 8,
+    marginBottom: 8,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: "#e2e8f0",
+    backgroundColor: "#ffffff",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   occasionOptionSelected: {
-    borderColor: "#6366f1",
-    backgroundColor: "#e0e7ff",
+    borderColor: "#667eea",
+    backgroundColor: "#667eea",
+    shadowColor: "#667eea",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 3,
   },
   occasionOptionText: {
     fontSize: 14,
-    color: "#6b7280",
-  },
-  occasionOptionTextSelected: {
-    color: "#6366f1",
+    color: "#718096",
     fontWeight: "600",
   },
-  fab: {
-    position: "absolute",
-    margin: 16,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "#6366f1",
+  occasionOptionTextSelected: {
+    color: "#ffffff",
+    fontWeight: "700",
   },
 });
 
