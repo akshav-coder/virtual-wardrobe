@@ -23,10 +23,13 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useRegisterMutation } from "../../services";
 import { showErrorMessage, showSuccessMessage } from "../../utils/apiUtils";
+import { useDispatch } from "react-redux";
+import { loginSuccess } from "../../store/slices/authSlice";
 
 const { width, height } = Dimensions.get("window");
 
 const RegisterScreen = ({ navigation }) => {
+  const dispatch = useDispatch();
   const [register, { isLoading }] = useRegisterMutation();
   const [formData, setFormData] = useState({
     firstName: "",
@@ -67,6 +70,13 @@ const RegisterScreen = ({ navigation }) => {
     }
 
     try {
+      console.log("🚀 Attempting registration with data:", {
+        firstName,
+        lastName,
+        email,
+        password: "***hidden***",
+      });
+
       const result = await register({
         firstName,
         lastName,
@@ -74,12 +84,24 @@ const RegisterScreen = ({ navigation }) => {
         password,
       }).unwrap();
 
+      console.log("✅ Registration successful:", result);
+
+      // Update authentication state with user data and token
+      dispatch(
+        loginSuccess({
+          user: result.data.user,
+          token: result.data.token,
+        })
+      );
+
       showSuccessMessage(
         "Account created successfully! Welcome to Virtual Wardrobe!",
         Alert.alert
       );
-      navigation.replace("Main");
+      // Navigation will happen automatically due to isAuthenticated state change
     } catch (error) {
+      console.error("❌ Registration error:", error);
+      console.error("❌ Error details:", JSON.stringify(error, null, 2));
       showErrorMessage(error, Alert.alert, "Registration failed");
     }
   };

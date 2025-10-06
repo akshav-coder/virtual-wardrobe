@@ -2,7 +2,7 @@
 export const API_CONFIG = {
   // Base URL for the backend API
   BASE_URL: __DEV__
-    ? "http://localhost:3001/api" // Development
+    ? "http://192.168.0.102:3001/api" // Development
     : "https://your-production-api.com/api", // Production
 
   // Timeout for API requests (in milliseconds)

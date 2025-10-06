@@ -66,10 +66,10 @@ const ProfileScreen = ({ navigation }) => {
   const [updatePreferencesMutation] = useUpdatePreferencesMutation();
   const [logoutMutation] = useLogoutMutation();
 
-  const user = profileData?.data || auth.user;
-  const stats = statsData?.data;
-  const wardrobeCount = stats?.wardrobe?.totalItems || 0;
-  const outfitsCount = stats?.outfits?.totalOutfits || 0;
+  const user = profileData?.data?.user || auth.user;
+  const stats = statsData?.data?.stats;
+  const wardrobeCount = stats?.totalItems || 0;
+  const outfitsCount = stats?.totalOutfits || 0;
 
   const [refreshing, setRefreshing] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(
@@ -224,17 +224,17 @@ const ProfileScreen = ({ navigation }) => {
 
         <View style={styles.insightsGrid}>
           <View style={styles.insightItem}>
-            <Text style={styles.insightValue}>{stats?.styleScore || 85}</Text>
+            <Text style={styles.insightValue}>{stats?.styleScore || 0}</Text>
             <Text style={styles.insightLabel}>Style Score</Text>
           </View>
           <View style={styles.insightItem}>
             <Text style={styles.insightValue}>
-              {stats?.diversityScore || 78}
+              {stats?.diversityScore || 0}
             </Text>
             <Text style={styles.insightLabel}>Diversity</Text>
           </View>
           <View style={styles.insightItem}>
-            <Text style={styles.insightValue}>{stats?.totalValue || 2450}</Text>
+            <Text style={styles.insightValue}>{stats?.totalValue || 0}</Text>
             <Text style={styles.insightLabel}>Total Value</Text>
           </View>
         </View>
@@ -242,19 +242,23 @@ const ProfileScreen = ({ navigation }) => {
         <View style={styles.topCategories}>
           <Text style={styles.categoriesTitle}>Top Categories</Text>
           <View style={styles.categoriesList}>
-            {Object.entries(stats?.wardrobe?.categories || {})
-              .sort(([, a], [, b]) => b - a)
-              .slice(0, 3)
-              .map(([category, count]) => (
-                <Chip
-                  key={category}
-                  style={styles.categoryChip}
-                  textStyle={styles.categoryChipText}
-                >
-                  {category.charAt(0).toUpperCase() + category.slice(1)} (
-                  {count})
-                </Chip>
-              ))}
+            {Object.keys(stats?.wardrobe?.categories || {}).length > 0 ? (
+              Object.entries(stats.wardrobe.categories)
+                .sort(([, a], [, b]) => b - a)
+                .slice(0, 3)
+                .map(([category, count]) => (
+                  <Chip
+                    key={category}
+                    style={styles.categoryChip}
+                    textStyle={styles.categoryChipText}
+                  >
+                    {category.charAt(0).toUpperCase() + category.slice(1)} (
+                    {count})
+                  </Chip>
+                ))
+            ) : (
+              <Text style={styles.noDataText}>No wardrobe data available</Text>
+            )}
           </View>
         </View>
       </Card.Content>
@@ -346,36 +350,8 @@ const ProfileScreen = ({ navigation }) => {
           <Text style={styles.sectionTitle}>Recent Activity</Text>
           <Card style={styles.activityCard}>
             <Card.Content>
-              {(
-                user?.recentActivity || [
-                  {
-                    id: "1",
-                    type: "item_added",
-                    message: "Added Black Ankle Boots to wardrobe",
-                    timestamp: "2024-01-24T14:30:00Z",
-                  },
-                  {
-                    id: "2",
-                    type: "outfit_created",
-                    message: "Created 'Winter Layers' outfit",
-                    timestamp: "2024-01-24T11:20:00Z",
-                  },
-                  {
-                    id: "3",
-                    type: "outfit_worn",
-                    message: "Wore 'Casual Friday' outfit",
-                    timestamp: "2024-01-23T08:15:00Z",
-                  },
-                  {
-                    id: "4",
-                    type: "item_favorited",
-                    message: "Added 'White Sneakers' to favorites",
-                    timestamp: "2024-01-22T16:45:00Z",
-                  },
-                ]
-              )
-                .slice(0, 4)
-                .map((activity, index) => (
+              {user?.recentActivity && user.recentActivity.length > 0 ? (
+                user.recentActivity.slice(0, 4).map((activity, index) => (
                   <ActivityItem
                     key={activity.id || index}
                     activity={{
@@ -399,7 +375,10 @@ const ProfileScreen = ({ navigation }) => {
                       time: new Date(activity.timestamp).toLocaleDateString(),
                     }}
                   />
-                ))}
+                ))
+              ) : (
+                <Text style={styles.noDataText}>No recent activity</Text>
+              )}
             </Card.Content>
           </Card>
         </View>
@@ -661,6 +640,13 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 100,
+  },
+  noDataText: {
+    fontSize: 14,
+    color: "#9ca3af",
+    textAlign: "center",
+    fontStyle: "italic",
+    paddingVertical: 20,
   },
 });
 

@@ -4,7 +4,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 export const aiApi = createApi({
   reducerPath: "aiApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:3001/api/ai",
+    baseUrl: "http://192.168.0.102:3001/api/ai",
     prepareHeaders: (headers, { getState }) => {
       const token = getState().auth?.token;
       if (token) {

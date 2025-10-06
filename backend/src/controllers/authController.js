@@ -4,13 +4,23 @@ const { generateToken } = require("../middleware/auth");
 // Register a new user
 const register = async (req, res) => {
   try {
-    const { name, email, password, phone, dateOfBirth, gender } = req.body;
+    const { firstName, lastName, email, password, phone, dateOfBirth, gender } =
+      req.body;
+
+    // Handle both frontend format (firstName, lastName) and backend format (name)
+    let name;
+    if (firstName && lastName) {
+      name = `${firstName} ${lastName}`.trim();
+    } else if (req.body.name) {
+      name = req.body.name;
+    }
 
     // Validation
     if (!name || !email || !password) {
       return res.status(400).json({
         error: "Validation failed",
-        message: "Name, email, and password are required",
+        message:
+          "Name (or first name and last name), email, and password are required",
       });
     }
 
