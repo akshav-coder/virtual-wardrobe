@@ -6,6 +6,7 @@ import {
   Dimensions,
   TouchableOpacity,
   Alert,
+  RefreshControl,
 } from "react-native";
 import {
   Card,
@@ -20,44 +21,148 @@ import {
   IconButton,
   TextInput,
   SegmentedButtons,
+  ActivityIndicator,
 } from "react-native-paper";
 import { Ionicons } from "@expo/vector-icons";
 import { useSelector, useDispatch } from "react-redux";
-import { updatePreferences } from "../store/slices/preferencesSlice";
-import { logout } from "../store/slices/userSlice";
+import {
+  useGetProfileQuery,
+  useUpdatePreferencesMutation,
+  useLogoutMutation,
+  useGetStatsQuery,
+} from "../services";
+import { logout } from "../store/slices/authSlice";
+import { showErrorMessage, showSuccessMessage } from "../utils/apiUtils";
 
 const { width } = Dimensions.get("window");
 
 const SettingsScreen = ({ navigation }) => {
-  const preferences = useSelector((state) => state.preferences.settings);
-  const wardrobe = useSelector((state) => state.wardrobe.items);
-  const outfits = useSelector((state) => state.outfits.outfits);
+  const auth = useSelector((state) => state.auth);
   const dispatch = useDispatch();
+  const [refreshing, setRefreshing] = useState(false);
+
+  // API hooks
+  const {
+    data: profileData,
+    isLoading: isLoadingProfile,
+    refetch: refetchProfile,
+  } = useGetProfileQuery(undefined, {
+    skip: !auth.isAuthenticated,
+  });
+
+  const {
+    data: statsData,
+    isLoading: isLoadingStats,
+    refetch: refetchStats,
+  } = useGetStatsQuery(undefined, {
+    skip: !auth.isAuthenticated,
+  });
+
+  const [updatePreferences, { isLoading: isUpdatingPreferences }] =
+    useUpdatePreferencesMutation();
+
+  const [logoutMutation, { isLoading: isLoggingOut }] = useLogoutMutation();
+
+  // Get preferences from API data
+  const preferences = profileData?.data?.user?.preferences || {};
+  const wardrobe = statsData?.data?.wardrobe || {};
+  const outfits = statsData?.data?.outfits || {};
+
   const [notifications, setNotifications] = useState(preferences.notifications);
+  const [weatherAlerts, setWeatherAlerts] = useState(preferences.weatherAlerts);
+  const [styleTips, setStyleTips] = useState(preferences.styleTips);
+  const [newItemAlerts, setNewItemAlerts] = useState(preferences.newItemAlerts);
   const [style, setStyle] = useState(preferences.style || "casual");
   const [budget, setBudget] = useState(
     preferences.budget?.toString() || "1000"
   );
   const [showBudgetInput, setShowBudgetInput] = useState(false);
 
-  const handleNotificationToggle = (value) => {
+  const isLoading = isLoadingProfile || isLoadingStats;
+
+  // Refresh function
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      if (auth.isAuthenticated) {
+        await Promise.all([refetchProfile(), refetchStats()]);
+      }
+      showSuccessMessage("Settings refreshed");
+    } catch (error) {
+      showErrorMessage("Failed to refresh settings");
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const handleNotificationToggle = async (value) => {
     setNotifications(value);
-    dispatch(updatePreferences({ notifications: value }));
+    try {
+      await updatePreferences({ notifications: value }).unwrap();
+      showSuccessMessage("Notifications updated");
+    } catch (error) {
+      setNotifications(!value); // Revert on error
+      showErrorMessage("Failed to update notifications");
+    }
   };
 
-  const handleStyleChange = (value) => {
+  const handleWeatherAlertsToggle = async (value) => {
+    setWeatherAlerts(value);
+    try {
+      await updatePreferences({ weatherAlerts: value }).unwrap();
+      showSuccessMessage("Weather alerts updated");
+    } catch (error) {
+      setWeatherAlerts(!value);
+      showErrorMessage("Failed to update weather alerts");
+    }
+  };
+
+  const handleStyleTipsToggle = async (value) => {
+    setStyleTips(value);
+    try {
+      await updatePreferences({ styleTips: value }).unwrap();
+      showSuccessMessage("Style tips updated");
+    } catch (error) {
+      setStyleTips(!value);
+      showErrorMessage("Failed to update style tips");
+    }
+  };
+
+  const handleNewItemAlertsToggle = async (value) => {
+    setNewItemAlerts(value);
+    try {
+      await updatePreferences({ newItemAlerts: value }).unwrap();
+      showSuccessMessage("New item alerts updated");
+    } catch (error) {
+      setNewItemAlerts(!value);
+      showErrorMessage("Failed to update new item alerts");
+    }
+  };
+
+  const handleStyleChange = async (value) => {
     setStyle(value);
-    dispatch(updatePreferences({ style: value }));
+    try {
+      await updatePreferences({ style: value }).unwrap();
+      showSuccessMessage("Style preference updated");
+    } catch (error) {
+      showErrorMessage("Failed to update style preference");
+    }
   };
 
-  const handleBudgetSave = () => {
+  const handleBudgetSave = async () => {
     const budgetValue = parseInt(budget);
     if (isNaN(budgetValue) || budgetValue < 0) {
       Alert.alert("Invalid Budget", "Please enter a valid budget amount.");
       return;
     }
-    dispatch(updatePreferences({ budget: budgetValue }));
-    setShowBudgetInput(false);
+
+    try {
+      await updatePreferences({ budget: budgetValue }).unwrap();
+      setShowBudgetInput(false);
+      showSuccessMessage("Budget updated successfully!");
+    } catch (error) {
+      showErrorMessage("Failed to update budget");
+    }
   };
 
   const handleExportData = () => {
@@ -119,9 +224,16 @@ const SettingsScreen = ({ navigation }) => {
                 {
                   text: "Logout",
                   style: "destructive",
-                  onPress: () => {
-                    dispatch(logout());
-                    // The App.js will automatically show Login screen due to authentication state change
+                  onPress: async () => {
+                    try {
+                      await logoutMutation().unwrap();
+                      dispatch(logout());
+                      showSuccessMessage("Logged out successfully");
+                    } catch (error) {
+                      // Still logout locally even if API call fails
+                      dispatch(logout());
+                      showSuccessMessage("Logged out successfully");
+                    }
                   },
                 },
               ]
@@ -179,6 +291,41 @@ const SettingsScreen = ({ navigation }) => {
             />
           )}
         />
+
+        <List.Item
+          title="Weather Alerts"
+          description="Get weather-based outfit recommendations"
+          left={(props) => (
+            <List.Icon {...props} icon="weather-partly-cloudy" />
+          )}
+          right={() => (
+            <Switch
+              value={weatherAlerts}
+              onValueChange={handleWeatherAlertsToggle}
+            />
+          )}
+        />
+
+        <List.Item
+          title="Style Tips"
+          description="Get AI-powered fashion advice"
+          left={(props) => <List.Icon {...props} icon="lightbulb" />}
+          right={() => (
+            <Switch value={styleTips} onValueChange={handleStyleTipsToggle} />
+          )}
+        />
+
+        <List.Item
+          title="New Item Alerts"
+          description="Get notified about new wardrobe additions"
+          left={(props) => <List.Icon {...props} icon="plus" />}
+          right={() => (
+            <Switch
+              value={newItemAlerts}
+              onValueChange={handleNewItemAlertsToggle}
+            />
+          )}
+        />
       </Card.Content>
     </Card>
   );
@@ -217,9 +364,28 @@ const SettingsScreen = ({ navigation }) => {
     </View>
   );
 
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#667eea" />
+        <Text style={styles.loadingText}>Loading settings...</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#667eea"]}
+          />
+        }
+      >
         <ProfileSection />
         <PreferencesSection />
       </ScrollView>
@@ -322,6 +488,18 @@ const styles = StyleSheet.create({
   modalButton: {
     flex: 1,
     marginHorizontal: 8,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#fafafa",
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: "#718096",
+    fontWeight: "500",
   },
 });
 

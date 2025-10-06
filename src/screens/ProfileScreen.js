@@ -23,35 +23,88 @@ import {
   Divider,
   List,
   IconButton,
+  ActivityIndicator,
 } from "react-native-paper";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useSelector, useDispatch } from "react-redux";
+import {
+  useGetProfileQuery,
+  useGetStatsQuery,
+  useUpdatePreferencesMutation,
+  useLogoutMutation,
+} from "../services";
 import { updatePreferences } from "../store/slices/preferencesSlice";
 import { startTour } from "../store/slices/tourSlice";
-import { logout } from "../store/slices/userSlice";
+import { logout } from "../store/slices/authSlice";
+import { showErrorMessage, showSuccessMessage } from "../utils/apiUtils";
 
 const { width } = Dimensions.get("window");
 
 const ProfileScreen = ({ navigation }) => {
-  const user = useSelector((state) => state.user.user);
-  const wardrobe = useSelector((state) => state.wardrobe.items);
-  const outfits = useSelector((state) => state.outfits.outfits);
+  const auth = useSelector((state) => state.auth);
   const preferences = useSelector((state) => state.preferences.settings);
   const dispatch = useDispatch();
+
+  // API hooks
+  const {
+    data: profileData,
+    isLoading: isProfileLoading,
+    refetch: refetchProfile,
+  } = useGetProfileQuery(undefined, {
+    skip: !auth.isAuthenticated,
+  });
+
+  const {
+    data: statsData,
+    isLoading: isStatsLoading,
+    refetch: refetchStats,
+  } = useGetStatsQuery(undefined, {
+    skip: !auth.isAuthenticated,
+  });
+
+  const [updatePreferencesMutation] = useUpdatePreferencesMutation();
+  const [logoutMutation] = useLogoutMutation();
+
+  const user = profileData?.data || auth.user;
+  const stats = statsData?.data;
+  const wardrobeCount = stats?.wardrobe?.totalItems || 0;
+  const outfitsCount = stats?.outfits?.totalOutfits || 0;
+
   const [refreshing, setRefreshing] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(
     preferences.notifications
   );
+  const isLoading = isProfileLoading || isStatsLoading;
 
-  const onRefresh = () => {
+  const onRefresh = async () => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
+    try {
+      if (auth.isAuthenticated) {
+        await Promise.all([refetchProfile(), refetchStats()]);
+      }
+    } catch (error) {
+      console.error("Refresh failed:", error);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
-  const handleNotificationToggle = (value) => {
+  const handleNotificationToggle = async (value) => {
     setNotificationsEnabled(value);
     dispatch(updatePreferences({ notifications: value }));
+
+    try {
+      await updatePreferencesMutation({
+        notifications: value,
+      }).unwrap();
+      showSuccessMessage("Preferences updated!", Alert.alert);
+    } catch (error) {
+      showErrorMessage(error, Alert.alert, "Failed to update preferences");
+      // Revert on error
+      setNotificationsEnabled(!value);
+      dispatch(updatePreferences({ notifications: !value }));
+    }
   };
 
   const handleStartTour = () => {
@@ -67,9 +120,16 @@ const ProfileScreen = ({ navigation }) => {
         {
           text: "Logout",
           style: "destructive",
-          onPress: () => {
-            dispatch(logout());
-            // The App.js will automatically show Login screen due to authentication state change
+          onPress: async () => {
+            try {
+              await logoutMutation().unwrap();
+              dispatch(logout());
+              showSuccessMessage("Logged out successfully!", Alert.alert);
+            } catch (error) {
+              // Still logout locally even if API call fails
+              dispatch(logout());
+              console.error("Logout API failed:", error);
+            }
           },
         },
       ]
@@ -164,21 +224,17 @@ const ProfileScreen = ({ navigation }) => {
 
         <View style={styles.insightsGrid}>
           <View style={styles.insightItem}>
-            <Text style={styles.insightValue}>
-              {user?.stats?.styleScore || 85}
-            </Text>
+            <Text style={styles.insightValue}>{stats?.styleScore || 85}</Text>
             <Text style={styles.insightLabel}>Style Score</Text>
           </View>
           <View style={styles.insightItem}>
             <Text style={styles.insightValue}>
-              {user?.stats?.diversityScore || 78}
+              {stats?.diversityScore || 78}
             </Text>
             <Text style={styles.insightLabel}>Diversity</Text>
           </View>
           <View style={styles.insightItem}>
-            <Text style={styles.insightValue}>
-              {user?.stats?.totalValue || 2450}
-            </Text>
+            <Text style={styles.insightValue}>{stats?.totalValue || 2450}</Text>
             <Text style={styles.insightLabel}>Total Value</Text>
           </View>
         </View>
@@ -186,7 +242,7 @@ const ProfileScreen = ({ navigation }) => {
         <View style={styles.topCategories}>
           <Text style={styles.categoriesTitle}>Top Categories</Text>
           <View style={styles.categoriesList}>
-            {Object.entries(user?.wardrobe?.categories || {})
+            {Object.entries(stats?.wardrobe?.categories || {})
               .sort(([, a], [, b]) => b - a)
               .slice(0, 3)
               .map(([category, count]) => (
@@ -221,25 +277,21 @@ const ProfileScreen = ({ navigation }) => {
         <View style={styles.statsContainer}>
           <StatsCard
             title="Total Items"
-            value={user?.stats?.totalItems || wardrobe?.length || 0}
+            value={wardrobeCount}
             icon="shirt"
             color="#6366f1"
             subtitle="in wardrobe"
           />
           <StatsCard
             title="Outfits"
-            value={user?.stats?.totalOutfits || outfits?.length || 0}
+            value={outfitsCount}
             icon="sparkles"
             color="#8b5cf6"
             subtitle="created"
           />
           <StatsCard
             title="Favorites"
-            value={
-              user?.stats?.favoriteItems ||
-              wardrobe?.filter((item) => item.isFavorite)?.length ||
-              0
-            }
+            value={stats?.favorites || 0}
             icon="heart"
             color="#ec4899"
             subtitle="loved items"
@@ -357,12 +409,32 @@ const ProfileScreen = ({ navigation }) => {
       </ScrollView>
     </View>
   );
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color="#6366f1" />
+        <Text style={styles.loadingText}>Loading profile...</Text>
+      </View>
+    );
+  }
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f8fafc",
+  },
+  loadingContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 40,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: "#6b7280",
   },
   scrollView: {
     flex: 1,

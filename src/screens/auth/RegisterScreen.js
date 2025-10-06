@@ -21,10 +21,13 @@ import {
 } from "react-native-paper";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import { useRegisterMutation } from "../../services";
+import { showErrorMessage, showSuccessMessage } from "../../utils/apiUtils";
 
 const { width, height } = Dimensions.get("window");
 
 const RegisterScreen = ({ navigation }) => {
+  const [register, { isLoading }] = useRegisterMutation();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -34,7 +37,6 @@ const RegisterScreen = ({ navigation }) => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
 
   const handleInputChange = (field, value) => {
@@ -64,16 +66,22 @@ const RegisterScreen = ({ navigation }) => {
       return;
     }
 
-    setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
-      Alert.alert(
-        "Success",
+    try {
+      const result = await register({
+        firstName,
+        lastName,
+        email,
+        password,
+      }).unwrap();
+
+      showSuccessMessage(
         "Account created successfully! Welcome to Virtual Wardrobe!",
-        [{ text: "OK", onPress: () => navigation.replace("Main") }]
+        Alert.alert
       );
-    }, 2000);
+      navigation.replace("Main");
+    } catch (error) {
+      showErrorMessage(error, Alert.alert, "Registration failed");
+    }
   };
 
   const handleGoogleRegister = () => {
@@ -200,12 +208,12 @@ const RegisterScreen = ({ navigation }) => {
                 <Button
                   mode="contained"
                   onPress={handleRegister}
-                  loading={loading}
-                  disabled={loading}
+                  loading={isLoading}
+                  disabled={isLoading}
                   style={styles.registerButton}
                   contentStyle={styles.buttonContent}
                 >
-                  {loading ? "Creating Account..." : "Create Account"}
+                  {isLoading ? "Creating Account..." : "Create Account"}
                 </Button>
 
                 <Divider style={styles.divider} />

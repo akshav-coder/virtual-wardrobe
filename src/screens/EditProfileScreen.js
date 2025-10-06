@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   ScrollView,
@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Alert,
   Dimensions,
+  RefreshControl,
 } from "react-native";
 import {
   Card,
@@ -16,69 +17,153 @@ import {
   Divider,
   IconButton,
   Surface,
+  ActivityIndicator,
 } from "react-native-paper";
 import { Ionicons } from "@expo/vector-icons";
 import { useSelector, useDispatch } from "react-redux";
-import { updateUser } from "../store/slices/userSlice";
+import {
+  useGetProfileQuery,
+  useUpdateProfileMutation,
+  useUpdatePreferencesMutation,
+  useUpdateBodyMeasurementsMutation,
+} from "../services";
+import { showErrorMessage, showSuccessMessage } from "../utils/apiUtils";
 
 const { width } = Dimensions.get("window");
 
 const EditProfileScreen = ({ navigation }) => {
-  const user = useSelector((state) => state.user.user);
+  const auth = useSelector((state) => state.auth);
   const dispatch = useDispatch();
+  const [refreshing, setRefreshing] = useState(false);
 
-  const [profile, setProfile] = useState({
-    name: user?.name || "",
-    email: user?.email || "",
-    phone: user?.phone || "",
-    dateOfBirth: user?.dateOfBirth || "",
-    gender: user?.gender || "",
-    // Body measurements (like a tailor)
-    height: user?.bodyMeasurements?.height || "",
-    weight: user?.bodyMeasurements?.weight || "",
-    chest: user?.bodyMeasurements?.chest || "",
-    waist: user?.bodyMeasurements?.waist || "",
-    hips: user?.bodyMeasurements?.hips || "",
-    inseam: user?.bodyMeasurements?.inseam || "",
-    shoulder: user?.bodyMeasurements?.shoulder || "",
-    sleeve: user?.bodyMeasurements?.sleeve || "",
-    neck: user?.bodyMeasurements?.neck || "",
-    shoeSize: user?.bodyMeasurements?.shoeSize || "",
-    // Style preferences
-    favoriteColors: user?.preferences?.colors?.join(", ") || "",
-    favoriteBrands: user?.preferences?.brands?.join(", ") || "",
-    styleType: user?.preferences?.style || "casual",
+  // API hooks
+  const {
+    data: profileData,
+    isLoading: isLoadingProfile,
+    refetch: refetchProfile,
+  } = useGetProfileQuery(undefined, {
+    skip: !auth.isAuthenticated,
   });
 
-  const handleSave = () => {
+  const [updateProfile, { isLoading: isUpdatingProfile }] =
+    useUpdateProfileMutation();
+
+  const [updatePreferences, { isLoading: isUpdatingPreferences }] =
+    useUpdatePreferencesMutation();
+
+  const [updateBodyMeasurements, { isLoading: isUpdatingMeasurements }] =
+    useUpdateBodyMeasurementsMutation();
+
+  const user = profileData?.data?.user;
+
+  const [profile, setProfile] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    dateOfBirth: "",
+    gender: "",
+    // Body measurements (like a tailor)
+    height: "",
+    weight: "",
+    chest: "",
+    waist: "",
+    hips: "",
+    inseam: "",
+    shoulder: "",
+    sleeve: "",
+    neck: "",
+    shoeSize: "",
+    // Style preferences
+    favoriteColors: "",
+    favoriteBrands: "",
+    styleType: "casual",
+    budget: "1000",
+  });
+
+  // Update profile state when user data is loaded
+  useEffect(() => {
+    if (user) {
+      setProfile({
+        name: user.name || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        dateOfBirth: user.dateOfBirth || "",
+        gender: user.gender || "",
+        // Body measurements
+        height: user.bodyMeasurements?.height || "",
+        weight: user.bodyMeasurements?.weight || "",
+        chest: user.bodyMeasurements?.chest || "",
+        waist: user.bodyMeasurements?.waist || "",
+        hips: user.bodyMeasurements?.hips || "",
+        inseam: user.bodyMeasurements?.inseam || "",
+        shoulder: user.bodyMeasurements?.shoulder || "",
+        sleeve: user.bodyMeasurements?.sleeve || "",
+        neck: user.bodyMeasurements?.neck || "",
+        shoeSize: user.bodyMeasurements?.shoeSize || "",
+        // Style preferences
+        favoriteColors: user.preferences?.colors?.join(", ") || "",
+        favoriteBrands: user.preferences?.brands?.join(", ") || "",
+        styleType: user.preferences?.style || "casual",
+        budget: user.preferences?.budget?.toString() || "1000",
+      });
+    }
+  }, [user]);
+
+  // Refresh function
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      if (auth.isAuthenticated) {
+        await refetchProfile();
+      }
+      showSuccessMessage("Profile refreshed");
+    } catch (error) {
+      showErrorMessage("Failed to refresh profile");
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const handleSave = async () => {
     // Validate required fields
     if (!profile.name.trim() || !profile.email.trim()) {
       Alert.alert("Validation Error", "Name and email are required fields.");
       return;
     }
 
-    // Process the data
-    const updatedUser = {
-      ...user,
-      name: profile.name.trim(),
-      email: profile.email.trim(),
-      phone: profile.phone.trim(),
-      dateOfBirth: profile.dateOfBirth.trim(),
-      gender: profile.gender.trim(),
-      bodyMeasurements: {
-        height: profile.height.trim(),
-        weight: profile.weight.trim(),
-        chest: profile.chest.trim(),
-        waist: profile.waist.trim(),
-        hips: profile.hips.trim(),
-        inseam: profile.inseam.trim(),
-        shoulder: profile.shoulder.trim(),
-        sleeve: profile.sleeve.trim(),
-        neck: profile.neck.trim(),
-        shoeSize: profile.shoeSize.trim(),
-      },
-      preferences: {
-        ...user?.preferences,
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(profile.email)) {
+      Alert.alert("Validation Error", "Please enter a valid email address.");
+      return;
+    }
+
+    try {
+      // Update basic profile information
+      const profileUpdatePromise = updateProfile({
+        name: profile.name.trim(),
+        email: profile.email.trim(),
+        phone: profile.phone.trim() || undefined,
+        dateOfBirth: profile.dateOfBirth.trim() || undefined,
+        gender: profile.gender.trim() || undefined,
+      });
+
+      // Update body measurements
+      const measurementsUpdatePromise = updateBodyMeasurements({
+        height: profile.height.trim() || undefined,
+        weight: profile.weight.trim() || undefined,
+        chest: profile.chest.trim() || undefined,
+        waist: profile.waist.trim() || undefined,
+        hips: profile.hips.trim() || undefined,
+        inseam: profile.inseam.trim() || undefined,
+        shoulder: profile.shoulder.trim() || undefined,
+        sleeve: profile.sleeve.trim() || undefined,
+        neck: profile.neck.trim() || undefined,
+        shoeSize: profile.shoeSize.trim() || undefined,
+      });
+
+      // Update preferences
+      const preferencesUpdatePromise = updatePreferences({
         colors: profile.favoriteColors
           .split(",")
           .map((color) => color.trim())
@@ -88,13 +173,21 @@ const EditProfileScreen = ({ navigation }) => {
           .map((brand) => brand.trim())
           .filter((brand) => brand.length > 0),
         style: profile.styleType,
-      },
-    };
+        budget: parseInt(profile.budget) || 1000,
+      });
 
-    dispatch(updateUser(updatedUser));
-    Alert.alert("Success", "Profile updated successfully!", [
-      { text: "OK", onPress: () => navigation.goBack() },
-    ]);
+      // Wait for all updates to complete
+      await Promise.all([
+        profileUpdatePromise,
+        measurementsUpdatePromise,
+        preferencesUpdatePromise,
+      ]);
+
+      showSuccessMessage("Profile updated successfully!");
+      navigation.goBack();
+    } catch (error) {
+      showErrorMessage("Failed to update profile. Please try again.");
+    }
   };
 
   const BodyMeasurementsSection = () => (
@@ -273,11 +366,27 @@ const EditProfileScreen = ({ navigation }) => {
     </Card>
   );
 
+  if (isLoadingProfile) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#667eea" />
+        <Text style={styles.loadingText}>Loading profile...</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#667eea"]}
+          />
+        }
       >
         <PersonalInfoSection />
         <BodyMeasurementsSection />
@@ -292,6 +401,12 @@ const EditProfileScreen = ({ navigation }) => {
         <Button
           mode="contained"
           onPress={handleSave}
+          loading={
+            isUpdatingProfile || isUpdatingPreferences || isUpdatingMeasurements
+          }
+          disabled={
+            isUpdatingProfile || isUpdatingPreferences || isUpdatingMeasurements
+          }
           style={styles.saveButton}
           contentStyle={styles.saveButtonContent}
         >
@@ -350,6 +465,18 @@ const styles = StyleSheet.create({
   },
   saveButtonContent: {
     paddingVertical: 8,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#fafafa",
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: "#718096",
+    fontWeight: "500",
   },
 });
 

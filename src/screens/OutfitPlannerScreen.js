@@ -8,6 +8,7 @@ import {
   Image,
   FlatList,
   Text as RNText,
+  RefreshControl,
 } from "react-native";
 import {
   Card,
@@ -18,21 +19,49 @@ import {
   FAB,
   Surface,
   IconButton,
+  ActivityIndicator,
 } from "react-native-paper";
 import { Ionicons } from "@expo/vector-icons";
 import { useSelector, useDispatch } from "react-redux";
-import { addOutfit } from "../store/slices/outfitSlice";
 import { theme } from "../theme/theme";
+import {
+  useGetOutfitsQuery,
+  useCreateOutfitMutation,
+  useGetItemsQuery,
+} from "../services";
+import { showErrorMessage, showSuccessMessage } from "../utils/apiUtils";
 
 const { width } = Dimensions.get("window");
 
 const OutfitPlannerScreen = ({ navigation }) => {
-  const wardrobe = useSelector((state) => state.wardrobe.items);
-  const outfits = useSelector((state) => state.outfits.outfits);
-  const dispatch = useDispatch();
+  const auth = useSelector((state) => state.auth);
   const [selectedView, setSelectedView] = useState("calendar");
   const [selectedItems, setSelectedItems] = useState([]);
   const [isCreatingOutfit, setIsCreatingOutfit] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // API hooks
+  const {
+    data: outfits = [],
+    isLoading: isLoadingOutfits,
+    error: outfitsError,
+    refetch: refetchOutfits,
+  } = useGetOutfitsQuery(undefined, {
+    skip: !auth.isAuthenticated,
+  });
+
+  const {
+    data: wardrobe = [],
+    isLoading: isLoadingWardrobe,
+    error: wardrobeError,
+    refetch: refetchWardrobe,
+  } = useGetItemsQuery(undefined, {
+    skip: !auth.isAuthenticated,
+  });
+
+  const [createOutfit, { isLoading: isCreating }] = useCreateOutfitMutation();
+
+  const isLoading = isLoadingOutfits || isLoadingWardrobe;
 
   const outfitCategories = {
     top: wardrobe.filter((item) => item.category === "top"),
@@ -53,21 +82,38 @@ const OutfitPlannerScreen = ({ navigation }) => {
     }
   };
 
-  const saveOutfit = () => {
+  // Refresh function
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([refetchOutfits(), refetchWardrobe()]);
+      showSuccessMessage("Outfit data refreshed");
+    } catch (error) {
+      showErrorMessage("Failed to refresh outfit data");
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const saveOutfit = async () => {
     if (selectedItems.length === 0) return;
 
-    const newOutfit = {
-      name: `Outfit ${outfits.length + 1}`,
-      items: selectedItems,
-      createdAt: new Date().toISOString(),
-      weather: "sunny",
-      temperature: 22,
-      occasion: "casual",
-    };
+    try {
+      const newOutfit = {
+        name: `Outfit ${outfits.length + 1}`,
+        items: selectedItems.map((item) => item._id || item.id),
+        weather: "sunny",
+        temperature: 22,
+        occasion: "casual",
+      };
 
-    dispatch(addOutfit(newOutfit));
-    setSelectedItems([]);
-    setIsCreatingOutfit(false);
+      await createOutfit(newOutfit).unwrap();
+      showSuccessMessage("Outfit created successfully");
+      setSelectedItems([]);
+      setIsCreatingOutfit(false);
+    } catch (error) {
+      showErrorMessage("Failed to create outfit");
+    }
   };
 
   const OutfitCard = ({ outfit }) => (
@@ -77,14 +123,14 @@ const OutfitPlannerScreen = ({ navigation }) => {
       activeOpacity={0.7}
     >
       <View style={styles.outfitPreview}>
-        {outfit.items.slice(0, 3).map((item, index) => (
+        {outfit.items?.slice(0, 3).map((item, index) => (
           <Image
             key={index}
-            source={{ uri: item.image }}
+            source={{ uri: item.image || item.imageUrl }}
             style={styles.minimalItemImage}
           />
         ))}
-        {outfit.items.length > 3 && (
+        {outfit.items?.length > 3 && (
           <View style={styles.moreIndicator}>
             <Text style={styles.moreCount}>+{outfit.items.length - 3}</Text>
           </View>
@@ -131,15 +177,16 @@ const OutfitPlannerScreen = ({ navigation }) => {
         <Text style={styles.creatorTitle}>New Outfit</Text>
         <TouchableOpacity
           onPress={saveOutfit}
-          disabled={selectedItems.length === 0}
+          disabled={selectedItems.length === 0 || isCreating}
         >
           <Text
             style={[
               styles.saveButton,
-              selectedItems.length === 0 && styles.saveButtonDisabled,
+              (selectedItems.length === 0 || isCreating) &&
+                styles.saveButtonDisabled,
             ]}
           >
-            Save
+            {isCreating ? "Saving..." : "Save"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -158,7 +205,7 @@ const OutfitPlannerScreen = ({ navigation }) => {
                   onPress={() => addItemToOutfit(item)}
                 >
                   <Image
-                    source={{ uri: item.image }}
+                    source={{ uri: item.image || item.imageUrl }}
                     style={styles.selectedItemImage}
                   />
                   <View style={styles.removeOverlay}>
@@ -195,7 +242,7 @@ const OutfitPlannerScreen = ({ navigation }) => {
                     ]}
                   >
                     <Image
-                      source={{ uri: item.image }}
+                      source={{ uri: item.image || item.imageUrl }}
                       style={styles.minimalItemImage}
                     />
                     {selectedItems.find(
@@ -228,15 +275,28 @@ const OutfitPlannerScreen = ({ navigation }) => {
       </View>
       <FlatList
         data={outfits}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item._id || item.id}
         renderItem={({ item }) => <OutfitCard outfit={item} />}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.outfitsGrid}
         numColumns={2}
         columnWrapperStyle={styles.outfitRow}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       />
     </View>
   );
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <View style={[styles.minimalContainer, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <Text style={styles.loadingText}>Loading outfit data...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.minimalContainer}>
@@ -310,6 +370,16 @@ const styles = StyleSheet.create({
   minimalContainer: {
     flex: 1,
     backgroundColor: theme.colors.background,
+  },
+  loadingContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 40,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: theme.colors.onSurfaceVariant,
   },
 
   // Header styles

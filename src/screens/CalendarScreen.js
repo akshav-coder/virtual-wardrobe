@@ -6,6 +6,7 @@ import {
   Dimensions,
   TouchableOpacity,
   Image,
+  RefreshControl,
 } from "react-native";
 import {
   Card,
@@ -17,18 +18,95 @@ import {
   Text,
   FAB,
   IconButton,
+  ActivityIndicator,
 } from "react-native-paper";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSelector } from "react-redux";
+import {
+  useGetEventsQuery,
+  useGetUpcomingEventsQuery,
+  useGetTodayEventsQuery,
+  useGetOutfitsQuery,
+  useGetCalendarStatsQuery,
+} from "../services";
+import { showErrorMessage, showSuccessMessage } from "../utils/apiUtils";
 
 const { width } = Dimensions.get("window");
 
 const CalendarScreen = ({ navigation }) => {
-  const outfits = useSelector((state) => state.outfits.outfits);
-  const wardrobe = useSelector((state) => state.wardrobe.items);
+  const auth = useSelector((state) => state.auth);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState("week"); // 'week' or 'month'
+  const [refreshing, setRefreshing] = useState(false);
+
+  // API hooks
+  const {
+    data: events = [],
+    isLoading: isLoadingEvents,
+    error: eventsError,
+    refetch: refetchEvents,
+  } = useGetEventsQuery(undefined, {
+    skip: !auth.isAuthenticated,
+  });
+
+  const {
+    data: upcomingEvents = [],
+    isLoading: isLoadingUpcoming,
+    refetch: refetchUpcoming,
+  } = useGetUpcomingEventsQuery(undefined, {
+    skip: !auth.isAuthenticated,
+  });
+
+  const {
+    data: todayEvents = [],
+    isLoading: isLoadingToday,
+    refetch: refetchToday,
+  } = useGetTodayEventsQuery(undefined, {
+    skip: !auth.isAuthenticated,
+  });
+
+  const {
+    data: outfits = [],
+    isLoading: isLoadingOutfits,
+    refetch: refetchOutfits,
+  } = useGetOutfitsQuery(undefined, {
+    skip: !auth.isAuthenticated,
+  });
+
+  const {
+    data: calendarStats,
+    isLoading: isLoadingStats,
+    refetch: refetchStats,
+  } = useGetCalendarStatsQuery(undefined, {
+    skip: !auth.isAuthenticated,
+  });
+
+  const isLoading =
+    isLoadingEvents ||
+    isLoadingUpcoming ||
+    isLoadingToday ||
+    isLoadingOutfits ||
+    isLoadingStats;
+
+  // Refresh function
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        refetchEvents(),
+        refetchUpcoming(),
+        refetchToday(),
+        refetchOutfits(),
+        refetchStats(),
+      ]);
+      showSuccessMessage("Calendar data refreshed");
+    } catch (error) {
+      showErrorMessage("Failed to refresh calendar data");
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const generateCalendarData = () => {
     const today = new Date();
@@ -44,14 +122,22 @@ const CalendarScreen = ({ navigation }) => {
       const date = new Date(startOfWeek);
       date.setDate(startOfWeek.getDate() + i);
 
+      // Filter outfits for this date
       const dayOutfits = outfits.filter((outfit) => {
         const outfitDate = new Date(outfit.createdAt);
         return outfitDate.toDateString() === date.toDateString();
       });
 
+      // Filter events for this date
+      const dayEvents = events.filter((event) => {
+        const eventDate = new Date(event.startDate);
+        return eventDate.toDateString() === date.toDateString();
+      });
+
       currentWeek.push({
         date,
         outfits: dayOutfits,
+        events: dayEvents,
         isToday: date.toDateString() === today.toDateString(),
         isPast: date < today,
       });
@@ -89,12 +175,23 @@ const CalendarScreen = ({ navigation }) => {
               <Image
                 source={{
                   uri:
-                    outfit.items[0]?.image || "https://via.placeholder.com/40",
+                    outfit.items?.[0]?.image ||
+                    outfit.items?.[0]?.imageUrl ||
+                    "https://via.placeholder.com/40",
                 }}
                 style={styles.outfitImage}
               />
               <Text style={styles.outfitName} numberOfLines={1}>
                 {outfit.name}
+              </Text>
+            </View>
+          ))
+        ) : dayData.events.length > 0 ? (
+          dayData.events.slice(0, 2).map((event, index) => (
+            <View key={index} style={styles.eventPreview}>
+              <Ionicons name="calendar" size={16} color="#6366f1" />
+              <Text style={styles.eventName} numberOfLines={1}>
+                {event.title}
               </Text>
             </View>
           ))
@@ -119,56 +216,106 @@ const CalendarScreen = ({ navigation }) => {
     </View>
   );
 
-  const UpcomingEvents = () => (
-    <Card style={styles.eventsCard}>
-      <Card.Content>
-        <Title style={styles.sectionTitle}>Upcoming Events</Title>
-        <View style={styles.eventsList}>
-          <View style={styles.eventItem}>
-            <View style={styles.eventIcon}>
-              <Ionicons name="briefcase" size={20} color="#6366f1" />
-            </View>
-            <View style={styles.eventInfo}>
-              <Text style={styles.eventTitle}>Team Meeting</Text>
-              <Text style={styles.eventTime}>Tomorrow, 10:00 AM</Text>
-              <Text style={styles.eventOutfit}>Suggested: Business Casual</Text>
-            </View>
-            <Button mode="outlined" compact>
-              Plan
-            </Button>
-          </View>
+  const UpcomingEvents = () => {
+    // Use API events if available, otherwise fallback to demo data
+    const displayEvents =
+      upcomingEvents.length > 0
+        ? upcomingEvents
+        : [
+            {
+              id: "1",
+              title: "Team Meeting",
+              startDate: new Date(
+                Date.now() + 24 * 60 * 60 * 1000
+              ).toISOString(),
+              occasion: "business",
+              outfitSuggestion: "Business Casual",
+            },
+            {
+              id: "2",
+              title: "Dinner Date",
+              startDate: new Date(
+                Date.now() + 4 * 24 * 60 * 60 * 1000
+              ).toISOString(),
+              occasion: "casual",
+              outfitSuggestion: "Smart Casual",
+            },
+            {
+              id: "3",
+              title: "Weekend Trip",
+              startDate: new Date(
+                Date.now() + 5 * 24 * 60 * 60 * 1000
+              ).toISOString(),
+              occasion: "travel",
+              outfitSuggestion: "Travel Comfort",
+            },
+          ];
 
-          <View style={styles.eventItem}>
-            <View style={styles.eventIcon}>
-              <Ionicons name="restaurant" size={20} color="#10b981" />
-            </View>
-            <View style={styles.eventInfo}>
-              <Text style={styles.eventTitle}>Dinner Date</Text>
-              <Text style={styles.eventTime}>Friday, 7:00 PM</Text>
-              <Text style={styles.eventOutfit}>Suggested: Smart Casual</Text>
-            </View>
-            <Button mode="outlined" compact>
-              Plan
-            </Button>
-          </View>
+    const getEventIcon = (occasion) => {
+      switch (occasion) {
+        case "business":
+          return "briefcase";
+        case "casual":
+          return "restaurant";
+        case "travel":
+          return "airplane";
+        default:
+          return "calendar";
+      }
+    };
 
-          <View style={styles.eventItem}>
-            <View style={styles.eventIcon}>
-              <Ionicons name="airplane" size={20} color="#f59e0b" />
-            </View>
-            <View style={styles.eventInfo}>
-              <Text style={styles.eventTitle}>Weekend Trip</Text>
-              <Text style={styles.eventTime}>Saturday, All Day</Text>
-              <Text style={styles.eventOutfit}>Suggested: Travel Comfort</Text>
-            </View>
-            <Button mode="outlined" compact>
-              Plan
-            </Button>
+    const getEventIconColor = (occasion) => {
+      switch (occasion) {
+        case "business":
+          return "#6366f1";
+        case "casual":
+          return "#10b981";
+        case "travel":
+          return "#f59e0b";
+        default:
+          return "#6b7280";
+      }
+    };
+
+    return (
+      <Card style={styles.eventsCard}>
+        <Card.Content>
+          <Title style={styles.sectionTitle}>Upcoming Events</Title>
+          <View style={styles.eventsList}>
+            {displayEvents.slice(0, 3).map((event, index) => (
+              <View key={event.id || index} style={styles.eventItem}>
+                <View style={styles.eventIcon}>
+                  <Ionicons
+                    name={getEventIcon(event.occasion)}
+                    size={20}
+                    color={getEventIconColor(event.occasion)}
+                  />
+                </View>
+                <View style={styles.eventInfo}>
+                  <Text style={styles.eventTitle}>{event.title}</Text>
+                  <Text style={styles.eventTime}>
+                    {new Date(event.startDate).toLocaleDateString("en", {
+                      weekday: "long",
+                      month: "short",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}
+                  </Text>
+                  <Text style={styles.eventOutfit}>
+                    Suggested: {event.outfitSuggestion || "Casual"}
+                  </Text>
+                </View>
+                <Button mode="outlined" compact>
+                  Plan
+                </Button>
+              </View>
+            ))}
           </View>
-        </View>
-      </Card.Content>
-    </Card>
-  );
+        </Card.Content>
+      </Card>
+    );
+  };
 
   const RecentOutfits = () => (
     <Card style={styles.recentCard}>
@@ -182,10 +329,10 @@ const CalendarScreen = ({ navigation }) => {
               onPress={() => navigation.navigate("OutfitDetail", { outfit })}
             >
               <View style={styles.recentOutfitImages}>
-                {outfit.items.slice(0, 3).map((item, itemIndex) => (
+                {outfit.items?.slice(0, 3).map((item, itemIndex) => (
                   <Image
                     key={itemIndex}
-                    source={{ uri: item.image }}
+                    source={{ uri: item.image || item.imageUrl }}
                     style={styles.recentOutfitImage}
                   />
                 ))}
@@ -207,25 +354,47 @@ const CalendarScreen = ({ navigation }) => {
     <View style={styles.statsContainer}>
       <Surface style={styles.statCard}>
         <Ionicons name="calendar" size={24} color="#6366f1" />
-        <Text style={styles.statNumber}>7</Text>
-        <Text style={styles.statLabel}>Days Planned</Text>
+        <Text style={styles.statNumber}>
+          {calendarStats?.totalEvents || events.length || 7}
+        </Text>
+        <Text style={styles.statLabel}>Events Planned</Text>
       </Surface>
       <Surface style={styles.statCard}>
         <Ionicons name="shirt" size={24} color="#10b981" />
-        <Text style={styles.statNumber}>{outfits.length}</Text>
+        <Text style={styles.statNumber}>
+          {calendarStats?.totalOutfits || outfits.length || 0}
+        </Text>
         <Text style={styles.statLabel}>Total Outfits</Text>
       </Surface>
       <Surface style={styles.statCard}>
         <Ionicons name="trending-up" size={24} color="#f59e0b" />
-        <Text style={styles.statNumber}>85%</Text>
+        <Text style={styles.statNumber}>
+          {calendarStats?.styleScore || "85%"}
+        </Text>
         <Text style={styles.statLabel}>Style Score</Text>
       </Surface>
     </View>
   );
 
+  // Show loading state
+  if (isLoading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color="#6366f1" />
+        <Text style={styles.loadingText}>Loading calendar data...</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         <WeekView />
         <QuickStats />
         <UpcomingEvents />
@@ -245,6 +414,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f8fafc",
+  },
+  loadingContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 40,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: "#6b7280",
   },
   content: {
     flex: 1,
@@ -324,6 +503,16 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: "#9ca3af",
     marginTop: 4,
+  },
+  eventPreview: {
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  eventName: {
+    fontSize: 10,
+    color: "#6b7280",
+    textAlign: "center",
+    marginTop: 2,
   },
   statsContainer: {
     flexDirection: "row",

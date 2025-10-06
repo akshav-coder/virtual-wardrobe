@@ -6,6 +6,7 @@ import {
   Dimensions,
   TouchableOpacity,
   Image,
+  RefreshControl,
 } from "react-native";
 import {
   Card,
@@ -18,19 +19,78 @@ import {
   FAB,
   IconButton,
   ProgressBar,
+  ActivityIndicator,
 } from "react-native-paper";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSelector } from "react-redux";
+import {
+  useGetCurrentWeatherQuery,
+  useGetForecastQuery,
+  useGetAlertsQuery,
+  useRefreshWeatherMutation,
+  useGetLocationQuery,
+  useGetWeatherRecommendationsQuery,
+} from "../services";
+import { showErrorMessage, showSuccessMessage } from "../utils/apiUtils";
 
 const { width } = Dimensions.get("window");
 
 const WeatherScreen = ({ navigation }) => {
-  const wardrobe = useSelector((state) => state.wardrobe.items);
-  const weather = useSelector((state) => state.weather.currentWeather);
-  const [selectedLocation, setSelectedLocation] = useState("New York");
-  const [weatherData, setWeatherData] = useState({
-    current: {
+  const auth = useSelector((state) => state.auth);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // API hooks
+  const {
+    data: currentWeather,
+    isLoading: isLoadingCurrent,
+    error: currentError,
+    refetch: refetchCurrent,
+  } = useGetCurrentWeatherQuery(undefined, {
+    skip: !auth.isAuthenticated,
+  });
+
+  const {
+    data: forecast,
+    isLoading: isLoadingForecast,
+    error: forecastError,
+    refetch: refetchForecast,
+  } = useGetForecastQuery(undefined, {
+    skip: !auth.isAuthenticated,
+  });
+
+  const {
+    data: alerts,
+    isLoading: isLoadingAlerts,
+    error: alertsError,
+    refetch: refetchAlerts,
+  } = useGetAlertsQuery(undefined, {
+    skip: !auth.isAuthenticated,
+  });
+
+  const {
+    data: location,
+    isLoading: isLoadingLocation,
+    refetch: refetchLocation,
+  } = useGetLocationQuery(undefined, {
+    skip: !auth.isAuthenticated,
+  });
+
+  const {
+    data: recommendations,
+    isLoading: isLoadingRecommendations,
+    refetch: refetchRecommendations,
+  } = useGetWeatherRecommendationsQuery(undefined, {
+    skip: !auth.isAuthenticated,
+  });
+
+  const [refreshWeather, { isLoading: isRefreshing }] =
+    useRefreshWeatherMutation();
+
+  // Derived state
+  const selectedLocation = location?.city || "New York";
+  const weatherData = {
+    current: currentWeather || {
       temp: 22,
       description: "Sunny",
       icon: "sunny",
@@ -38,7 +98,7 @@ const WeatherScreen = ({ navigation }) => {
       windSpeed: 12,
       uvIndex: 6,
     },
-    forecast: [
+    forecast: forecast || [
       { day: "Today", high: 25, low: 18, description: "Sunny", icon: "sunny" },
       {
         day: "Tomorrow",
@@ -51,7 +111,43 @@ const WeatherScreen = ({ navigation }) => {
       { day: "Thu", high: 18, low: 12, description: "Cloudy", icon: "cloudy" },
       { day: "Fri", high: 21, low: 15, description: "Sunny", icon: "sunny" },
     ],
-  });
+  };
+
+  const isLoading =
+    isLoadingCurrent ||
+    isLoadingForecast ||
+    isLoadingAlerts ||
+    isLoadingLocation ||
+    isLoadingRecommendations;
+
+  // Refresh function
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        refetchCurrent(),
+        refetchForecast(),
+        refetchAlerts(),
+        refetchLocation(),
+        refetchRecommendations(),
+      ]);
+      showSuccessMessage("Weather data refreshed");
+    } catch (error) {
+      showErrorMessage("Failed to refresh weather data");
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // Handle refresh button press
+  const handleRefresh = async () => {
+    try {
+      await refreshWeather().unwrap();
+      showSuccessMessage("Weather data refreshed");
+    } catch (error) {
+      showErrorMessage("Failed to refresh weather data");
+    }
+  };
 
   const getWeatherIcon = (iconName) => {
     const iconMap = {
@@ -108,18 +204,40 @@ const WeatherScreen = ({ navigation }) => {
   };
 
   const getOutfitSuggestions = () => {
-    const temp = weatherData.current.temp;
-    const suitableItems = wardrobe.filter((item) => {
-      if (temp < 10) {
-        return item.category === "outerwear" || item.category === "dress";
-      } else if (temp < 20) {
-        return item.category === "top" || item.category === "dress";
-      } else {
-        return item.category === "top" || item.category === "dress";
-      }
-    });
+    // Use API recommendations if available, otherwise fallback to local logic
+    if (recommendations && recommendations.length > 0) {
+      return recommendations.slice(0, 6);
+    }
 
-    return suitableItems.slice(0, 6);
+    // Fallback to demo data if no recommendations from API
+    return [
+      {
+        id: "1",
+        name: "Warm Jacket",
+        image: "https://via.placeholder.com/150",
+      },
+      {
+        id: "2",
+        name: "Comfortable Jeans",
+        image: "https://via.placeholder.com/150",
+      },
+      {
+        id: "3",
+        name: "Cozy Sweater",
+        image: "https://via.placeholder.com/150",
+      },
+      {
+        id: "4",
+        name: "Weather Boots",
+        image: "https://via.placeholder.com/150",
+      },
+      {
+        id: "5",
+        name: "Rain Jacket",
+        image: "https://via.placeholder.com/150",
+      },
+      { id: "6", name: "Umbrella", image: "https://via.placeholder.com/150" },
+    ];
   };
 
   const CurrentWeather = () => (
@@ -144,19 +262,20 @@ const WeatherScreen = ({ navigation }) => {
             icon="refresh"
             size={24}
             iconColor="white"
-            onPress={() => {
-              /* Refresh weather */
-            }}
+            onPress={handleRefresh}
+            disabled={isRefreshing}
           />
         </View>
 
         <View style={styles.weatherMain}>
           <View style={styles.weatherInfo}>
             <Text style={styles.temperatureText}>
-              {weatherData.current.temp}°C
+              {weatherData.current.temp || weatherData.current.temperature}°C
             </Text>
             <Text style={styles.descriptionText}>
-              {weatherData.current.description}
+              {weatherData.current.description ||
+                weatherData.current.condition ||
+                "Sunny"}
             </Text>
           </View>
           <Ionicons
@@ -170,20 +289,22 @@ const WeatherScreen = ({ navigation }) => {
           <View style={styles.weatherDetail}>
             <Ionicons name="water" size={16} color="white" />
             <Text style={styles.detailText}>
-              {weatherData.current.humidity}%
+              {weatherData.current.humidity || 65}%
             </Text>
             <Text style={styles.detailLabel}>Humidity</Text>
           </View>
           <View style={styles.weatherDetail}>
             <Ionicons name="leaf" size={16} color="white" />
             <Text style={styles.detailText}>
-              {weatherData.current.windSpeed} km/h
+              {weatherData.current.windSpeed || 12} km/h
             </Text>
             <Text style={styles.detailLabel}>Wind</Text>
           </View>
           <View style={styles.weatherDetail}>
             <Ionicons name="sunny" size={16} color="white" />
-            <Text style={styles.detailText}>{weatherData.current.uvIndex}</Text>
+            <Text style={styles.detailText}>
+              {weatherData.current.uvIndex || 6}
+            </Text>
             <Text style={styles.detailLabel}>UV Index</Text>
           </View>
         </View>
@@ -264,26 +385,62 @@ const WeatherScreen = ({ navigation }) => {
     </Card>
   );
 
-  const WeatherAlerts = () => (
-    <Card style={styles.alertsCard}>
-      <Card.Content>
-        <Title style={styles.sectionTitle}>Weather Alerts</Title>
-        <View style={styles.alertItem}>
-          <Ionicons name="warning" size={20} color="#f59e0b" />
-          <View style={styles.alertContent}>
-            <Text style={styles.alertTitle}>UV Index High</Text>
-            <Text style={styles.alertDescription}>
-              UV index is 6. Consider wearing sunscreen and protective clothing.
-            </Text>
-          </View>
-        </View>
-      </Card.Content>
-    </Card>
-  );
+  const WeatherAlerts = () => {
+    // Use API alerts if available, otherwise show default alert
+    const displayAlerts =
+      alerts && alerts.length > 0
+        ? alerts
+        : [
+            {
+              id: "1",
+              title: "UV Index High",
+              description:
+                "UV index is 6. Consider wearing sunscreen and protective clothing.",
+              severity: "warning",
+            },
+          ];
+
+    return (
+      <Card style={styles.alertsCard}>
+        <Card.Content>
+          <Title style={styles.sectionTitle}>Weather Alerts</Title>
+          {displayAlerts.map((alert, index) => (
+            <View key={alert.id || index} style={styles.alertItem}>
+              <Ionicons
+                name="warning"
+                size={20}
+                color={alert.severity === "warning" ? "#f59e0b" : "#ef4444"}
+              />
+              <View style={styles.alertContent}>
+                <Text style={styles.alertTitle}>{alert.title}</Text>
+                <Text style={styles.alertDescription}>{alert.description}</Text>
+              </View>
+            </View>
+          ))}
+        </Card.Content>
+      </Card>
+    );
+  };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color="#6366f1" />
+        <Text style={styles.loadingText}>Loading weather data...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         <CurrentWeather />
         <Forecast />
         <WeatherRecommendations />
@@ -294,9 +451,8 @@ const WeatherScreen = ({ navigation }) => {
       <FAB
         icon="refresh"
         style={styles.fab}
-        onPress={() => {
-          /* Refresh weather data */
-        }}
+        onPress={handleRefresh}
+        loading={isRefreshing}
       />
     </View>
   );
@@ -306,6 +462,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f8fafc",
+  },
+  loadingContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 40,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: "#6b7280",
   },
   content: {
     flex: 1,

@@ -9,24 +9,46 @@ import {
   FlatList,
   StatusBar,
   TextInput,
+  Alert,
 } from "react-native";
-import { Text, FAB, Menu, IconButton } from "react-native-paper";
+import {
+  Text,
+  FAB,
+  Menu,
+  IconButton,
+  ActivityIndicator,
+} from "react-native-paper";
 import { Ionicons } from "@expo/vector-icons";
 import { useSelector, useDispatch } from "react-redux";
-import { toggleFavorite } from "../store/slices/wardrobeSlice";
+import { useGetItemsQuery, useToggleFavoriteMutation } from "../services";
+import { showErrorMessage, showSuccessMessage } from "../utils/apiUtils";
 import { theme } from "../theme/theme";
 
 const { width } = Dimensions.get("window");
 const itemWidth = (width - 48) / 2;
 
 const WardrobeScreen = ({ navigation }) => {
-  const wardrobe = useSelector((state) => state.wardrobe.items);
-  const dispatch = useDispatch();
+  const auth = useSelector((state) => state.auth);
+  const [toggleFavorite] = useToggleFavoriteMutation();
 
+  // Get wardrobe items from API
+  const {
+    data: wardrobeData,
+    isLoading,
+    error,
+    refetch,
+  } = useGetItemsQuery({ limit: 100 }, { skip: !auth.isAuthenticated });
+
+  const wardrobe = wardrobeData?.data?.items || [];
   const favorites = wardrobe.filter((item) => item.isFavorite);
 
-  const handleToggleFavorite = (itemId) => {
-    dispatch(toggleFavorite(itemId));
+  const handleToggleFavorite = async (itemId) => {
+    try {
+      await toggleFavorite(itemId).unwrap();
+      showSuccessMessage("Favorite status updated!", Alert.alert);
+    } catch (error) {
+      showErrorMessage(error, Alert.alert, "Failed to update favorite status");
+    }
   };
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -120,10 +142,13 @@ const WardrobeScreen = ({ navigation }) => {
       activeOpacity={0.7}
     >
       <View style={styles.itemImageContainer}>
-        <Image source={{ uri: item.image }} style={styles.itemImage} />
+        <Image
+          source={{ uri: item.image || item.imageUrl }}
+          style={styles.itemImage}
+        />
         <TouchableOpacity
           style={styles.favoriteButton}
-          onPress={() => handleToggleFavorite(item.id)}
+          onPress={() => handleToggleFavorite(item._id)}
         >
           <Ionicons
             name={item.isFavorite ? "heart" : "heart-outline"}
@@ -155,7 +180,10 @@ const WardrobeScreen = ({ navigation }) => {
       activeOpacity={0.7}
     >
       <View style={styles.listItemContent}>
-        <Image source={{ uri: item.image }} style={styles.listItemImage} />
+        <Image
+          source={{ uri: item.image || item.imageUrl }}
+          style={styles.listItemImage}
+        />
         <View style={styles.listItemInfo}>
           <Text style={styles.listItemName}>{item.name}</Text>
           <Text style={styles.listItemBrand}>
@@ -167,7 +195,7 @@ const WardrobeScreen = ({ navigation }) => {
         </View>
         <TouchableOpacity
           style={styles.listFavoriteButton}
-          onPress={() => handleToggleFavorite(item.id)}
+          onPress={() => handleToggleFavorite(item._id)}
         >
           <Ionicons
             name={item.isFavorite ? "heart" : "heart-outline"}
@@ -319,12 +347,31 @@ const WardrobeScreen = ({ navigation }) => {
       <CategoryFilter />
 
       {/* Wardrobe Content */}
-      {filteredWardrobe.length === 0 ? (
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#6366f1" />
+          <Text style={styles.loadingText}>Loading wardrobe...</Text>
+        </View>
+      ) : error ? (
+        <View style={styles.errorContainer}>
+          <Ionicons name="alert-circle-outline" size={64} color="#ef4444" />
+          <Text style={styles.errorTitle}>Failed to load wardrobe</Text>
+          <Text style={styles.errorDescription}>
+            {error.data?.message || "Something went wrong"}
+          </Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => refetch()}
+          >
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : filteredWardrobe.length === 0 ? (
         <EmptyState />
       ) : (
         <FlatList
           data={filteredWardrobe}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item._id}
           numColumns={viewMode === "grid" ? 2 : 1}
           key={viewMode}
           renderItem={({ item }) =>
@@ -336,6 +383,8 @@ const WardrobeScreen = ({ navigation }) => {
           }
           contentContainerStyle={styles.wardrobeList}
           showsVerticalScrollIndicator={false}
+          refreshing={isLoading}
+          onRefresh={refetch}
         />
       )}
 
@@ -556,6 +605,49 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     backgroundColor: "#6366f1",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 40,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: "#6b7280",
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 40,
+  },
+  errorTitle: {
+    marginTop: 16,
+    marginBottom: 8,
+    textAlign: "center",
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#111827",
+  },
+  errorDescription: {
+    textAlign: "center",
+    marginBottom: 24,
+    color: "#6b7280",
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  retryButton: {
+    backgroundColor: "#6366f1",
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "600",
   },
 });
 

@@ -7,6 +7,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import {
   Card,
@@ -22,17 +23,18 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useDispatch } from "react-redux";
-import { setUser } from "../../store/slices/userSlice";
-import { demoUser } from "../../data/demoData";
+import { useLoginMutation } from "../../services";
+import { loginSuccess } from "../../store/slices/authSlice";
+import { showErrorMessage, showSuccessMessage } from "../../utils/apiUtils";
 
 const { width, height } = Dimensions.get("window");
 
 const LoginScreen = ({ navigation }) => {
   const dispatch = useDispatch();
+  const [login, { isLoading }] = useLoginMutation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -40,14 +42,24 @@ const LoginScreen = ({ navigation }) => {
       return;
     }
 
-    setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
-      // Set user in Redux store to authenticate
-      dispatch(setUser(demoUser));
-      // The App.js will automatically show Main screen due to authentication state change
-    }, 1500);
+    try {
+      const result = await login({
+        email,
+        password,
+      }).unwrap();
+
+      // Dispatch success action
+      dispatch(
+        loginSuccess({
+          user: result.data.user,
+          token: result.data.token,
+        })
+      );
+
+      showSuccessMessage("Successfully logged in!", Alert.alert);
+    } catch (error) {
+      showErrorMessage(error, Alert.alert, "Login failed");
+    }
   };
 
   const handleGoogleLogin = () => {
@@ -119,12 +131,12 @@ const LoginScreen = ({ navigation }) => {
                 <Button
                   mode="contained"
                   onPress={handleLogin}
-                  loading={loading}
-                  disabled={loading}
+                  loading={isLoading}
+                  disabled={isLoading}
                   style={styles.loginButton}
                   contentStyle={styles.buttonContent}
                 >
-                  {loading ? "Signing In..." : "Sign In"}
+                  {isLoading ? "Signing In..." : "Sign In"}
                 </Button>
 
                 <Button
@@ -170,28 +182,6 @@ const LoginScreen = ({ navigation }) => {
                     Sign Up
                   </Button>
                 </View>
-              </Card.Content>
-            </Card>
-
-            {/* Demo Login */}
-            <Card style={styles.demoCard}>
-              <Card.Content>
-                <Text style={styles.demoTitle}>Demo Mode</Text>
-                <Text style={styles.demoText}>
-                  Try the app without creating an account
-                </Text>
-                <Button
-                  mode="outlined"
-                  onPress={() => {
-                    // Set demo user in Redux store for guest mode
-                    dispatch(setUser(demoUser));
-                    // The App.js will automatically show Main screen due to authentication state change
-                  }}
-                  style={styles.demoButton}
-                  icon="play"
-                >
-                  Continue as Guest
-                </Button>
               </Card.Content>
             </Card>
           </ScrollView>
@@ -289,27 +279,6 @@ const styles = StyleSheet.create({
   },
   signupButton: {
     marginLeft: -8,
-  },
-  demoCard: {
-    borderRadius: 16,
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
-    elevation: 4,
-  },
-  demoTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 8,
-    color: "#6366f1",
-  },
-  demoText: {
-    fontSize: 14,
-    textAlign: "center",
-    color: "#666",
-    marginBottom: 16,
-  },
-  demoButton: {
-    borderRadius: 12,
   },
 });
 

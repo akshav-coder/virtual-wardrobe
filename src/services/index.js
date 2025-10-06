@@ -100,7 +100,7 @@ export {
   useGetRecommendationHistoryQuery,
   useDeleteRecommendationMutation,
   useGetPreferencesQuery,
-  useUpdatePreferencesMutation,
+  useUpdatePreferencesMutation as useUpdateAIPreferencesMutation,
 } from "./aiApi";
 
 // Calendar API
@@ -152,7 +152,7 @@ export {
   default as analyticsApi,
   useTrackEventMutation,
   useGetEventsQuery as useGetAnalyticsEventsQuery,
-  useGetDashboardQuery,
+  useGetDashboardQuery as useGetAnalyticsDashboardQuery,
   useGetUserStatsQuery,
   useGetEventTypeStatsQuery,
   useGetCategoryStatsQuery,

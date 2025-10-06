@@ -1,6 +1,5 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { setupListeners } from "@reduxjs/toolkit/query";
-import { api } from "../services/api";
 import authApi from "../services/authApi";
 import userApi from "../services/userApi";
 import wardrobeApi from "../services/wardrobeApi";
@@ -11,17 +10,12 @@ import calendarApi from "../services/calendarApi";
 import imageApi from "../services/imageApi";
 import analyticsApi from "../services/analyticsApi";
 import authReducer from "./slices/authSlice";
-import wardrobeReducer from "./slices/wardrobeSlice";
-import outfitReducer from "./slices/outfitSlice";
-import userReducer from "./slices/userSlice";
-import weatherReducer from "./slices/weatherSlice";
 import preferencesReducer from "./slices/preferencesSlice";
 import tourReducer from "./slices/tourSlice";
 
 export const store = configureStore({
   reducer: {
     // API slices
-    [api.reducerPath]: api.reducer,
     [authApi.reducerPath]: authApi.reducer,
     [userApi.reducerPath]: userApi.reducer,
     [wardrobeApi.reducerPath]: wardrobeApi.reducer,
@@ -33,10 +27,6 @@ export const store = configureStore({
     [analyticsApi.reducerPath]: analyticsApi.reducer,
     // Local slices
     auth: authReducer,
-    wardrobe: wardrobeReducer,
-    outfits: outfitReducer,
-    user: userReducer,
-    weather: weatherReducer,
     preferences: preferencesReducer,
     tour: tourReducer,
   },
@@ -44,7 +34,6 @@ export const store = configureStore({
     getDefaultMiddleware({
       serializableCheck: {
         ignoredActions: [
-          api.util.resetApiState.type,
           authApi.util.resetApiState.type,
           userApi.util.resetApiState.type,
           wardrobeApi.util.resetApiState.type,
@@ -57,7 +46,6 @@ export const store = configureStore({
         ],
       },
     }).concat(
-      api.middleware,
       authApi.middleware,
       userApi.middleware,
       wardrobeApi.middleware,

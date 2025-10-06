@@ -6,6 +6,7 @@ import {
   Dimensions,
   TouchableOpacity,
   Image,
+  RefreshControl,
 } from "react-native";
 import {
   Card,
@@ -15,19 +16,75 @@ import {
   Text,
   Surface,
   Divider,
+  ActivityIndicator,
 } from "react-native-paper";
 import { Ionicons } from "@expo/vector-icons";
 import { useSelector } from "react-redux";
+import {
+  useGetItemsQuery,
+  useGetOutfitsQuery,
+  useGetCurrentWeatherQuery,
+  useGenerateRecommendationsMutation,
+  useGetStyleAnalysisQuery,
+} from "../services";
+import { showErrorMessage, showSuccessMessage } from "../utils/apiUtils";
 
 const { width } = Dimensions.get("window");
 
 const StylistScreen = ({ navigation }) => {
-  const wardrobe = useSelector((state) => state.wardrobe.items);
-  const preferences = useSelector((state) => state.preferences.settings);
-  const weather = useSelector((state) => state.weather.currentWeather);
+  const auth = useSelector((state) => state.auth);
   const [selectedTab, setSelectedTab] = useState("recommendations");
   const [selectedStyle, setSelectedStyle] = useState("casual");
   const [selectedOccasion, setSelectedOccasion] = useState("daily");
+  const [refreshing, setRefreshing] = useState(false);
+
+  // API hooks
+  const {
+    data: wardrobeData,
+    isLoading: isLoadingWardrobe,
+    error: wardrobeError,
+    refetch: refetchWardrobe,
+  } = useGetItemsQuery(undefined, {
+    skip: !auth.isAuthenticated,
+  });
+
+  const {
+    data: outfitsData,
+    isLoading: isLoadingOutfits,
+    refetch: refetchOutfits,
+  } = useGetOutfitsQuery(undefined, {
+    skip: !auth.isAuthenticated,
+  });
+
+  const {
+    data: weatherData,
+    isLoading: isLoadingWeather,
+    refetch: refetchWeather,
+  } = useGetCurrentWeatherQuery(undefined, {
+    skip: !auth.isAuthenticated,
+  });
+
+  const {
+    data: styleAnalysis,
+    isLoading: isLoadingStyleAnalysis,
+    refetch: refetchStyleAnalysis,
+  } = useGetStyleAnalysisQuery(undefined, {
+    skip: !auth.isAuthenticated,
+  });
+
+  const [generateRecommendations, { isLoading: isGeneratingRecommendations }] =
+    useGenerateRecommendationsMutation();
+
+  const wardrobe = wardrobeData?.data?.items || [];
+  const outfits = outfitsData?.data?.outfits || [];
+  const weather = weatherData?.data;
+  const styleAnalysisData = styleAnalysis?.data;
+
+  const isLoading =
+    isLoadingWardrobe ||
+    isLoadingOutfits ||
+    isLoadingWeather ||
+    isLoadingStyleAnalysis;
 
   const styleOptions = [
     { key: "casual", label: "Casual" },
@@ -43,7 +100,58 @@ const StylistScreen = ({ navigation }) => {
     { key: "party", label: "Party" },
   ];
 
+  // Refresh function
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        refetchWardrobe(),
+        refetchOutfits(),
+        refetchWeather(),
+        refetchStyleAnalysis(),
+      ]);
+      showSuccessMessage("Stylist data refreshed");
+    } catch (error) {
+      showErrorMessage("Failed to refresh stylist data");
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // Handle AI recommendation generation
+  const handleGenerateRecommendations = async () => {
+    try {
+      const result = await generateRecommendations({
+        type: selectedOccasion,
+        occasion: selectedOccasion,
+        style: selectedStyle,
+        limit: 5,
+      }).unwrap();
+      
+      if (result.data?.recommendations?.length > 0) {
+        showSuccessMessage("New recommendations generated!");
+      } else {
+        showErrorMessage("No recommendations available. Try adding more items to your wardrobe.");
+      }
+    } catch (error) {
+      showErrorMessage("Failed to generate recommendations");
+    }
+  };
+
   const aiRecommendations = useMemo(() => {
+    // Use API recommendations if available, otherwise fallback to local logic
+    if (styleAnalysisData?.recommendations?.length > 0) {
+      return styleAnalysisData.recommendations.map((rec, index) => ({
+        id: rec._id || `rec-${index}`,
+        title: rec.title || `Recommendation ${index + 1}`,
+        items: rec.items || wardrobe.slice(0, 3),
+        reason: rec.reason || "AI-powered recommendation",
+      }));
+    }
+    
+    // Fallback to local recommendations
+    if (wardrobe.length === 0) return [];
+    
     return [
       {
         id: "1",
@@ -58,7 +166,7 @@ const StylistScreen = ({ navigation }) => {
         reason: "Try something new this week",
       },
     ];
-  }, [wardrobe, preferences, weather]);
+  }, [wardrobe, styleAnalysisData]);
 
   const wardrobeStats = useMemo(() => {
     const totalItems = wardrobe.length;
@@ -193,6 +301,15 @@ const StylistScreen = ({ navigation }) => {
     </View>
   );
 
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#667eea" />
+        <Text style={styles.loadingText}>Loading stylist data...</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       {/* Simple Header */}
@@ -248,15 +365,45 @@ const StylistScreen = ({ navigation }) => {
       </View>
 
       {/* Content */}
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.content} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#667eea"]}
+          />
+        }
+      >
         {selectedTab === "recommendations" && (
           <View style={styles.recommendationsContainer}>
-            {aiRecommendations.map((recommendation) => (
-              <RecommendationCard
-                key={recommendation.id}
-                recommendation={recommendation}
-              />
-            ))}
+            <View style={styles.generateButtonContainer}>
+              <Button
+                mode="contained"
+                onPress={handleGenerateRecommendations}
+                loading={isGeneratingRecommendations}
+                disabled={isGeneratingRecommendations}
+                style={styles.generateButton}
+                icon="auto-fix"
+              >
+                Generate AI Recommendations
+              </Button>
+            </View>
+            {aiRecommendations.length > 0 ? (
+              aiRecommendations.map((recommendation) => (
+                <RecommendationCard
+                  key={recommendation.id}
+                  recommendation={recommendation}
+                />
+              ))
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>
+                  No recommendations available. Generate some AI-powered suggestions!
+                </Text>
+              </View>
+            )}
           </View>
         )}
 
@@ -592,6 +739,36 @@ const styles = StyleSheet.create({
   occasionOptionTextSelected: {
     color: "#ffffff",
     fontWeight: "700",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#fafafa",
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: "#718096",
+    fontWeight: "500",
+  },
+  generateButtonContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  generateButton: {
+    borderRadius: 12,
+    elevation: 2,
+  },
+  emptyState: {
+    padding: 40,
+    alignItems: "center",
+  },
+  emptyStateText: {
+    fontSize: 16,
+    color: "#718096",
+    textAlign: "center",
+    lineHeight: 24,
   },
 });
 

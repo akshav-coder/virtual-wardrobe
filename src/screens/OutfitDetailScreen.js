@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Image,
   Share,
+  RefreshControl,
 } from "react-native";
 import {
   Card,
@@ -20,68 +21,115 @@ import {
   FAB,
   Menu,
   Divider,
+  ActivityIndicator,
 } from "react-native-paper";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSelector, useDispatch } from "react-redux";
-import { addOutfit, deleteOutfit } from "../store/slices/outfitSlice";
+import {
+  useGetOutfitQuery,
+  useDeleteOutfitMutation,
+  useToggleFavoriteMutation,
+  useUpdateOutfitMutation,
+} from "../services";
+import { showErrorMessage, showSuccessMessage } from "../utils/apiUtils";
 
 const { width } = Dimensions.get("window");
 
 const OutfitDetailScreen = ({ route, navigation }) => {
-  const { outfit } = route.params;
-  const dispatch = useDispatch();
+  const { outfit: initialOutfit } = route.params;
+  const auth = useSelector((state) => state.auth);
   const [menuVisible, setMenuVisible] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // API hooks
+  const {
+    data: outfit,
+    isLoading,
+    error,
+    refetch,
+  } = useGetOutfitQuery(initialOutfit._id || initialOutfit.id, {
+    skip: !auth.isAuthenticated || !(initialOutfit._id || initialOutfit.id),
+  });
+
+  const [deleteOutfit, { isLoading: isDeleting }] = useDeleteOutfitMutation();
+  const [toggleFavorite, { isLoading: isTogglingFavorite }] =
+    useToggleFavoriteMutation();
+  const [updateOutfit, { isLoading: isUpdating }] = useUpdateOutfitMutation();
+
+  // Use initial outfit data if API call is skipped or failed
+  const displayOutfit = outfit || initialOutfit;
+
+  // Refresh function
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refetch();
+      showSuccessMessage("Outfit data refreshed");
+    } catch (error) {
+      showErrorMessage("Failed to refresh outfit data");
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `Check out my outfit: ${outfit.name}`,
-        title: outfit.name,
+        message: `Check out my outfit: ${displayOutfit.name}`,
+        title: displayOutfit.name,
       });
     } catch (error) {
       console.error("Error sharing:", error);
     }
   };
 
-  const handleSaveOutfit = () => {
-    dispatch(addOutfit(outfit));
-    // Show success message
+  const handleToggleFavorite = async () => {
+    try {
+      await toggleFavorite(displayOutfit._id || displayOutfit.id).unwrap();
+      showSuccessMessage("Favorite status updated");
+    } catch (error) {
+      showErrorMessage("Failed to update favorite status");
+    }
   };
 
-  const handleDeleteOutfit = () => {
-    dispatch(deleteOutfit(outfit.id));
-    navigation.goBack();
+  const handleDeleteOutfit = async () => {
+    try {
+      await deleteOutfit(displayOutfit._id || displayOutfit.id).unwrap();
+      showSuccessMessage("Outfit deleted successfully");
+      navigation.goBack();
+    } catch (error) {
+      showErrorMessage("Failed to delete outfit");
+    }
   };
 
   const OutfitHeader = () => (
     <LinearGradient colors={["#6366f1", "#8b5cf6"]} style={styles.outfitHeader}>
       <View style={styles.headerContent}>
         <View style={styles.headerInfo}>
-          <Title style={styles.outfitTitle}>{outfit.name}</Title>
+          <Title style={styles.outfitTitle}>{displayOutfit.name}</Title>
           <Text style={styles.outfitDate}>
-            {new Date(outfit.createdAt).toLocaleDateString()}
+            {new Date(displayOutfit.createdAt).toLocaleDateString()}
           </Text>
           <View style={styles.outfitTags}>
             <Chip mode="outlined" compact style={styles.outfitTag}>
-              {outfit.occasion || "Casual"}
+              {displayOutfit.occasion || "Casual"}
             </Chip>
             <Chip mode="outlined" compact style={styles.outfitTag}>
-              {outfit.temperature || 22}°C
+              {displayOutfit.temperature || 22}°C
             </Chip>
             <Chip mode="outlined" compact style={styles.outfitTag}>
-              {outfit.weather || "Sunny"}
+              {displayOutfit.weather || "Sunny"}
             </Chip>
           </View>
         </View>
         <View style={styles.headerActions}>
           <IconButton
-            icon="heart-outline"
+            icon={displayOutfit.isFavorite ? "heart" : "heart-outline"}
             size={24}
             iconColor="white"
-            onPress={() => {
-              /* Toggle favorite */
-            }}
+            onPress={handleToggleFavorite}
+            disabled={isTogglingFavorite}
           />
           <Menu
             visible={menuVisible}
@@ -106,10 +154,14 @@ const OutfitDetailScreen = ({ route, navigation }) => {
             <Menu.Item
               onPress={() => {
                 setMenuVisible(false);
-                handleSaveOutfit();
+                handleToggleFavorite();
               }}
-              title="Save Outfit"
-              leadingIcon="bookmark"
+              title={
+                displayOutfit.isFavorite
+                  ? "Remove from Favorites"
+                  : "Add to Favorites"
+              }
+              leadingIcon={displayOutfit.isFavorite ? "heart-off" : "heart"}
             />
             <Menu.Item
               onPress={() => {
@@ -130,13 +182,16 @@ const OutfitDetailScreen = ({ route, navigation }) => {
       <Card.Content>
         <Title style={styles.sectionTitle}>Items in this outfit</Title>
         <View style={styles.itemsGrid}>
-          {outfit.items.map((item, index) => (
+          {displayOutfit.items?.map((item, index) => (
             <TouchableOpacity
               key={index}
               style={styles.itemCard}
               onPress={() => console.log("Item tapped:", item.name)}
             >
-              <Image source={{ uri: item.image }} style={styles.itemImage} />
+              <Image
+                source={{ uri: item.image || item.imageUrl }}
+                style={styles.itemImage}
+              />
               <View style={styles.itemInfo}>
                 <Text style={styles.itemName} numberOfLines={2}>
                   {item.name}
@@ -167,7 +222,9 @@ const OutfitDetailScreen = ({ route, navigation }) => {
         <View style={styles.statsGrid}>
           <View style={styles.statItem}>
             <Ionicons name="shirt" size={24} color="#6366f1" />
-            <Text style={styles.statNumber}>{outfit.items.length}</Text>
+            <Text style={styles.statNumber}>
+              {displayOutfit.items?.length || 0}
+            </Text>
             <Text style={styles.statLabel}>Items</Text>
           </View>
           <View style={styles.statItem}>
@@ -195,7 +252,7 @@ const OutfitDetailScreen = ({ route, navigation }) => {
       <Card.Content>
         <Title style={styles.sectionTitle}>Notes</Title>
         <Text style={styles.notesText}>
-          {outfit.notes || "No notes added for this outfit."}
+          {displayOutfit.notes || "No notes added for this outfit."}
         </Text>
         <Button
           mode="outlined"
@@ -262,9 +319,25 @@ const OutfitDetailScreen = ({ route, navigation }) => {
     </View>
   );
 
+  // Show loading state
+  if (isLoading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color="#6366f1" />
+        <Text style={styles.loadingText}>Loading outfit details...</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         <OutfitHeader />
         <View style={styles.body}>
           <OutfitItems />
@@ -283,6 +356,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f8fafc",
+  },
+  loadingContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 40,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: "#6b7280",
   },
   content: {
     flex: 1,

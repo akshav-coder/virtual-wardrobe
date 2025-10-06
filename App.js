@@ -46,7 +46,7 @@ const MainApp = () => {
   const { isOnboardingComplete, isTourVisible } = useSelector(
     (state) => state.tour
   );
-  const { isAuthenticated } = useSelector((state) => state.user);
+  const { isAuthenticated } = useSelector((state) => state.auth);
 
   useEffect(() => {
     // For demo purposes, show tour on first launch

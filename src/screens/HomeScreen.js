@@ -21,21 +21,56 @@ import {
   FAB,
   Modal,
   Portal,
+  ActivityIndicator,
 } from "react-native-paper";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useSelector } from "react-redux";
+import {
+  useGetItemsQuery,
+  useGetOutfitsQuery,
+  useGetCurrentWeatherQuery,
+  useGenerateRecommendationsMutation,
+} from "../services";
+import { showErrorMessage, showSuccessMessage } from "../utils/apiUtils";
 
 const { width } = Dimensions.get("window");
 
 const HomeScreen = ({ navigation }) => {
-  const wardrobe = useSelector((state) => state.wardrobe.items);
-  const outfits = useSelector((state) => state.outfits.outfits);
-  const weather = useSelector((state) => state.weather.currentWeather);
-  const preferences = useSelector((state) => state.preferences.settings);
+  const auth = useSelector((state) => state.auth);
+
+  // API hooks
+  const {
+    data: wardrobeData,
+    isLoading: isWardrobeLoading,
+    refetch: refetchWardrobe,
+  } = useGetItemsQuery({ limit: 10 }, { skip: !auth.isAuthenticated });
+
+  const {
+    data: outfitsData,
+    isLoading: isOutfitsLoading,
+    refetch: refetchOutfits,
+  } = useGetOutfitsQuery({ limit: 5 }, { skip: !auth.isAuthenticated });
+
+  const {
+    data: weatherData,
+    isLoading: isWeatherLoading,
+    refetch: refetchWeather,
+  } = useGetCurrentWeatherQuery(undefined, {
+    skip: !auth.isAuthenticated,
+  });
+
+  const [generateRecommendations, { isLoading: isGeneratingRecommendations }] =
+    useGenerateRecommendationsMutation();
+
+  const wardrobe = wardrobeData?.data?.items || [];
+  const outfits = outfitsData?.data?.outfits || [];
+  const weather = weatherData?.data;
   const [todaysOutfit, setTodaysOutfit] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [showAddOptions, setShowAddOptions] = useState(false);
+
+  const isLoading = isWardrobeLoading || isOutfitsLoading || isWeatherLoading;
 
   useEffect(() => {
     // Auto-generate today's outfit on component mount
@@ -44,38 +79,90 @@ const HomeScreen = ({ navigation }) => {
     }
   }, [wardrobe]);
 
-  const generateTodaysOutfit = () => {
+  const generateTodaysOutfit = async () => {
     if (wardrobe.length === 0) return null;
 
-    const tops = wardrobe.filter((item) => item.category === "top");
-    const bottoms = wardrobe.filter((item) => item.category === "bottom");
-    const shoes = wardrobe.filter((item) => item.category === "shoes");
-    const accessories = wardrobe.filter(
-      (item) => item.category === "accessory"
-    );
+    try {
+      const result = await generateRecommendations({
+        type: "daily_outfit",
+        occasion: "casual",
+      }).unwrap();
 
-    const outfit = {
-      id: "today-" + Date.now(),
-      name: "Today's Look",
-      items: [
-        tops[Math.floor(Math.random() * tops.length)],
-        bottoms[Math.floor(Math.random() * bottoms.length)],
-        shoes[Math.floor(Math.random() * shoes.length)],
-        accessories[Math.floor(Math.random() * accessories.length)],
-      ].filter(Boolean),
-      weather: weather?.description || "sunny",
-      temperature: weather?.temp || 22,
-      createdAt: new Date().toISOString(),
-    };
+      if (result.data && result.data.recommendations.length > 0) {
+        const recommendation = result.data.recommendations[0];
+        setTodaysOutfit({
+          id: recommendation._id,
+          name: recommendation.title,
+          items: recommendation.items || [],
+          createdAt: recommendation.createdAt,
+        });
+      } else {
+        // Fallback to local generation
+        const tops = wardrobe.filter((item) => item.category === "top");
+        const bottoms = wardrobe.filter((item) => item.category === "bottom");
+        const shoes = wardrobe.filter((item) => item.category === "shoes");
+        const accessories = wardrobe.filter(
+          (item) => item.category === "accessory"
+        );
 
-    setTodaysOutfit(outfit);
-    return outfit;
+        const outfit = {
+          id: "today-" + Date.now(),
+          name: "Today's Look",
+          items: [
+            tops[Math.floor(Math.random() * tops.length)],
+            bottoms[Math.floor(Math.random() * bottoms.length)],
+            shoes[Math.floor(Math.random() * shoes.length)],
+            accessories[Math.floor(Math.random() * accessories.length)],
+          ].filter(Boolean),
+          weather: weather?.description || "sunny",
+          temperature: weather?.temp || 22,
+          createdAt: new Date().toISOString(),
+        };
+
+        setTodaysOutfit(outfit);
+      }
+    } catch (error) {
+      console.error("Failed to generate outfit:", error);
+      // Fallback to local generation
+      const tops = wardrobe.filter((item) => item.category === "top");
+      const bottoms = wardrobe.filter((item) => item.category === "bottom");
+      const shoes = wardrobe.filter((item) => item.category === "shoes");
+      const accessories = wardrobe.filter(
+        (item) => item.category === "accessory"
+      );
+
+      const outfit = {
+        id: "today-" + Date.now(),
+        name: "Today's Look",
+        items: [
+          tops[Math.floor(Math.random() * tops.length)],
+          bottoms[Math.floor(Math.random() * bottoms.length)],
+          shoes[Math.floor(Math.random() * shoes.length)],
+          accessories[Math.floor(Math.random() * accessories.length)],
+        ].filter(Boolean),
+        weather: weather?.description || "sunny",
+        temperature: weather?.temp || 22,
+        createdAt: new Date().toISOString(),
+      };
+
+      setTodaysOutfit(outfit);
+    }
   };
 
-  const onRefresh = () => {
+  const onRefresh = async () => {
     setRefreshing(true);
-    generateTodaysOutfit();
-    setTimeout(() => setRefreshing(false), 1000);
+    try {
+      await Promise.all([
+        refetchWardrobe(),
+        refetchOutfits(),
+        refetchWeather(),
+      ]);
+      await generateTodaysOutfit();
+    } catch (error) {
+      console.error("Refresh failed:", error);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const TodaysOutfitCard = () => {
@@ -333,6 +420,16 @@ const HomeScreen = ({ navigation }) => {
     </Portal>
   );
 
+  // Show loading state
+  if (isLoading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color="#6366f1" />
+        <Text style={styles.loadingText}>Loading your wardrobe...</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -352,7 +449,9 @@ const HomeScreen = ({ navigation }) => {
             <View style={styles.headerRight}>
               <View style={styles.weatherInfo}>
                 <Ionicons name="partly-sunny" size={20} color="#6366f1" />
-                <Text style={styles.weatherText}>{weather?.temp || 22}°</Text>
+                <Text style={styles.weatherText}>
+                  {weather?.temperature?.current || weather?.temp || 22}°
+                </Text>
               </View>
               <TouchableOpacity
                 onPress={() => navigation.navigate("Profile")}
@@ -406,6 +505,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f8fafc",
+  },
+  loadingContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 40,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: "#6b7280",
   },
   scrollView: {
     flex: 1,

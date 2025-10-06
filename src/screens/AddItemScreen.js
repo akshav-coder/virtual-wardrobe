@@ -23,16 +23,22 @@ import {
   RadioButton,
   Portal,
   Modal,
+  ActivityIndicator,
 } from "react-native-paper";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { useDispatch } from "react-redux";
-import { addItem } from "../store/slices/wardrobeSlice";
+import { useCreateItemMutation, useUploadImageMutation } from "../services";
+import {
+  showErrorMessage,
+  showSuccessMessage,
+  createFormData,
+} from "../utils/apiUtils";
 
 const { width } = Dimensions.get("window");
 
 const AddItemScreen = ({ navigation }) => {
-  const dispatch = useDispatch();
+  const [createItem, { isLoading: isCreating }] = useCreateItemMutation();
+  const [uploadImage, { isLoading: isUploading }] = useUploadImageMutation();
   const [selectedMethod, setSelectedMethod] = useState("camera");
   const [formData, setFormData] = useState({
     name: "",
@@ -140,7 +146,7 @@ const AddItemScreen = ({ navigation }) => {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.name || !formData.category || !formData.image) {
       Alert.alert(
         "Missing Information",
@@ -149,18 +155,42 @@ const AddItemScreen = ({ navigation }) => {
       return;
     }
 
-    const newItem = {
-      ...formData,
-      isNew: true,
-      wearCount: 0,
-      isFavorite: false,
-      createdAt: new Date().toISOString(),
-    };
+    try {
+      let imageUrl = formData.image;
 
-    dispatch(addItem(newItem));
-    Alert.alert("Success", "Item added to your wardrobe!", [
-      { text: "OK", onPress: () => navigation.goBack() },
-    ]);
+      // Upload image if it's a local URI
+      if (formData.image && formData.image.startsWith("file://")) {
+        const formDataUpload = createFormData(
+          { tags: formData.tags.join(","), category: formData.category },
+          { uri: formData.image, type: "image/jpeg", name: "item.jpg" }
+        );
+
+        const uploadResult = await uploadImage(formDataUpload).unwrap();
+        imageUrl = uploadResult.data.url;
+      }
+
+      const newItem = {
+        name: formData.name,
+        brand: formData.brand,
+        category: formData.category,
+        color: formData.color,
+        size: formData.size,
+        price: formData.price ? parseFloat(formData.price) : undefined,
+        image: imageUrl,
+        notes: formData.notes,
+        tags: formData.tags,
+        season: "all-season", // Default value
+        occasions: ["casual"], // Default value
+        minTemperature: 10, // Default values
+        maxTemperature: 30,
+      };
+
+      await createItem(newItem).unwrap();
+      showSuccessMessage("Item added to your wardrobe!", Alert.alert);
+      navigation.goBack();
+    } catch (error) {
+      showErrorMessage(error, Alert.alert, "Failed to add item");
+    }
   };
 
   const CategoryModal = () => (
@@ -514,14 +544,30 @@ const AddItemScreen = ({ navigation }) => {
         <TouchableOpacity
           style={[
             styles.saveButton,
-            (!formData.name || !formData.category || !formData.image) &&
+            (!formData.name ||
+              !formData.category ||
+              !formData.image ||
+              isCreating ||
+              isUploading) &&
               styles.saveButtonDisabled,
           ]}
           onPress={handleSave}
-          disabled={!formData.name || !formData.category || !formData.image}
+          disabled={
+            !formData.name ||
+            !formData.category ||
+            !formData.image ||
+            isCreating ||
+            isUploading
+          }
         >
-          <Ionicons name="checkmark-circle" size={20} color="white" />
-          <Text style={styles.saveButtonText}>Add to Wardrobe</Text>
+          {isCreating || isUploading ? (
+            <ActivityIndicator size="small" color="white" />
+          ) : (
+            <Ionicons name="checkmark-circle" size={20} color="white" />
+          )}
+          <Text style={styles.saveButtonText}>
+            {isCreating || isUploading ? "Adding..." : "Add to Wardrobe"}
+          </Text>
         </TouchableOpacity>
       </View>
 

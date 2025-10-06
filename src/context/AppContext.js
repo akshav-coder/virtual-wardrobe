@@ -1,29 +1,24 @@
 import React, { createContext, useContext, useReducer, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-  demoWardrobe,
-  demoOutfits,
-  demoUser,
-  demoWeather,
-} from "../data/demoData";
 
 const AppContext = createContext();
 
 const initialState = {
-  user: demoUser,
-  wardrobe: demoWardrobe,
-  outfits: demoOutfits,
-  favorites: ["1", "2", "4", "5", "6"], // IDs of favorite items
-  weather: demoWeather,
+  // Demo data removed - using Redux store and API calls instead
+  user: null,
+  wardrobe: [],
+  outfits: [],
+  favorites: [],
+  weather: null,
   calendarEvents: [],
   preferences: {
     style: "casual",
-    colors: ["White", "Blue", "Black"],
-    brands: ["Uniqlo", "Zara", "H&M"],
+    colors: [],
+    brands: [],
     budget: 1000,
     notifications: true,
   },
-  isOnboardingComplete: true,
+  isOnboardingComplete: false,
   loading: false,
   error: null,
 };
