@@ -4,7 +4,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 export const wardrobeApi = createApi({
   reducerPath: "wardrobeApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://192.168.0.102:3001/api/wardrobe",
+    baseUrl: "http://10.74.215.78:3001/api/wardrobe",
     prepareHeaders: (headers, { getState }) => {
       const token = getState().auth?.token;
       if (token) {
