@@ -442,32 +442,33 @@ const HomeScreen = ({ navigation }) => {
       >
         {/* Header with Logo */}
         <View style={styles.header}>
-          <View style={styles.headerContent}>
-            <View style={styles.headerLeft}>
-              <Logo size="small" showText={false} style={styles.logo} />
-              <View style={styles.greetingContainer}>
-                <Text style={styles.greeting}>Good morning</Text>
-                <Text style={styles.subGreeting}>Ready to style today?</Text>
-              </View>
+          {/* Top row with Logo and Profile */}
+          <View style={styles.headerTopRow}>
+            <Logo size="small" showText={false} style={styles.logo} />
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Profile")}
+              style={styles.profileButton}
+            >
+              <Avatar.Text
+                size={40}
+                label="U"
+                style={styles.avatar}
+                labelStyle={styles.avatarLabel}
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* Bottom row with Greeting and Weather */}
+          <View style={styles.headerBottomRow}>
+            <View style={styles.greetingContainer}>
+              <Text style={styles.greeting}>Good morning</Text>
+              <Text style={styles.subGreeting}>Ready to style today?</Text>
             </View>
-            <View style={styles.headerRight}>
-              <View style={styles.weatherInfo}>
-                <Ionicons name="partly-sunny" size={20} color="#6366f1" />
-                <Text style={styles.weatherText}>
-                  {weather?.temperature?.current || weather?.temp || 22}°
-                </Text>
-              </View>
-              <TouchableOpacity
-                onPress={() => navigation.navigate("Profile")}
-                style={styles.profileButton}
-              >
-                <Avatar.Text
-                  size={40}
-                  label="U"
-                  style={styles.avatar}
-                  labelStyle={styles.avatarLabel}
-                />
-              </TouchableOpacity>
+            <View style={styles.weatherInfo}>
+              <Ionicons name="partly-sunny" size={20} color="#6366f1" />
+              <Text style={styles.weatherText}>
+                {weather?.temperature?.current || weather?.temp || 22}°
+              </Text>
             </View>
           </View>
         </View>
@@ -529,36 +530,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     backgroundColor: "white",
   },
-  headerContent: {
+  headerTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  headerBottomRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
   logo: {
-    marginRight: 16,
+    // Logo now has more space in the top row
   },
   greetingContainer: {
     flex: 1,
   },
   greeting: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: "bold",
     color: "#1f2937",
     marginBottom: 4,
   },
   subGreeting: {
-    fontSize: 16,
+    fontSize: 14,
     color: "#6b7280",
-  },
-  headerRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
   },
   weatherInfo: {
     flexDirection: "row",

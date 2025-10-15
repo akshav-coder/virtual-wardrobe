@@ -42,7 +42,7 @@ const OutfitPlannerScreen = ({ navigation }) => {
 
   // API hooks
   const {
-    data: outfits = [],
+    data: outfitsData,
     isLoading: isLoadingOutfits,
     error: outfitsError,
     refetch: refetchOutfits,
@@ -50,14 +50,18 @@ const OutfitPlannerScreen = ({ navigation }) => {
     skip: !auth.isAuthenticated,
   });
 
+  const outfits = outfitsData?.data?.outfits || [];
+
   const {
-    data: wardrobe = [],
+    data: wardrobeData,
     isLoading: isLoadingWardrobe,
     error: wardrobeError,
     refetch: refetchWardrobe,
   } = useGetItemsQuery(undefined, {
     skip: !auth.isAuthenticated,
   });
+
+  const wardrobe = wardrobeData?.data?.items || [];
 
   const [createOutfit, { isLoading: isCreating }] = useCreateOutfitMutation();
 
