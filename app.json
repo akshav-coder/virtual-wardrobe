@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Virtual Wardrobe",
-    "slug": "virtual-wardrobe",
+    "name": "WEARON",
+    "slug": "wearon",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -12,25 +12,25 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.virtualwardrobe.app"
+      "bundleIdentifier": "com.wearon.app"
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#6366f1"
       },
-      "package": "com.virtualwardrobe.app"
+      "package": "com.wearon.app"
     },
     "plugins": [
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow Virtual Wardrobe to access your camera to take photos of your clothing items."
+          "cameraPermission": "Allow WEARON to access your camera to take photos of your clothing items."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Virtual Wardrobe to access your photo library to select images of your clothing items."
+          "photosPermission": "Allow WEARON to access your photo library to select images of your clothing items."
         }
       ]
     ]

@@ -30,7 +30,7 @@ const OnboardingTour = ({ visible, onComplete, onSkip }) => {
   const tourSteps = [
     {
       id: "welcome",
-      title: "Welcome to Virtual Wardrobe! 👋",
+      title: "Welcome to WEARON! 👋",
       description:
         "Your personal AI-powered styling assistant that helps you organize your wardrobe and create amazing outfits.",
       icon: "shirt",
@@ -116,7 +116,7 @@ const OnboardingTour = ({ visible, onComplete, onSkip }) => {
       id: "features",
       title: "Key Features 🚀",
       description:
-        "Discover the powerful features that make Virtual Wardrobe your ultimate styling companion.",
+        "Discover the powerful features that make WEARON your ultimate styling companion.",
       icon: "star",
       color: "#8b5cf6",
       features: [
@@ -131,7 +131,7 @@ const OnboardingTour = ({ visible, onComplete, onSkip }) => {
       id: "ready",
       title: "You're All Set! 🎉",
       description:
-        "Start exploring your virtual wardrobe and discover your perfect style with AI-powered recommendations.",
+        "Start exploring your wardrobe and discover your perfect style with AI-powered recommendations.",
       icon: "checkmark-circle",
       color: "#10b981",
       features: [

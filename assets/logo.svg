@@ -1,0 +1,36 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle with Gradient -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="textGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f8fafc;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Main Circle Background -->
+  <circle cx="60" cy="60" r="58" fill="url(#bgGradient)" stroke="#ffffff" stroke-width="2"/>
+  
+  <!-- Stylized "W" Letter -->
+  <path d="M25 35 L35 35 L40 55 L45 35 L55 35 L50 75 L40 75 L35 55 L30 75 L20 75 Z" fill="url(#textGradient)" stroke="none"/>
+  
+  <!-- Fashion Icon Elements -->
+  <!-- Hanger -->
+  <path d="M70 25 Q75 20 80 25 L85 30 Q85 35 80 40 L75 45" stroke="url(#textGradient)" stroke-width="3" fill="none" stroke-linecap="round"/>
+  
+  <!-- Shirt Silhouette -->
+  <path d="M75 45 L75 60 L70 65 L80 65 L75 60 L75 45" fill="url(#textGradient)" opacity="0.8"/>
+  
+  <!-- Style Accent Lines -->
+  <line x1="25" y1="85" x2="35" y2="85" stroke="url(#textGradient)" stroke-width="2" stroke-linecap="round"/>
+  <line x1="40" y1="85" x2="50" y2="85" stroke="url(#textGradient)" stroke-width="2" stroke-linecap="round"/>
+  <line x1="55" y1="85" x2="65" y2="85" stroke="url(#textGradient)" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- Decorative Elements -->
+  <circle cx="90" cy="30" r="3" fill="url(#textGradient)" opacity="0.6"/>
+  <circle cx="95" cy="40" r="2" fill="url(#textGradient)" opacity="0.4"/>
+  <circle cx="88" cy="50" r="2.5" fill="url(#textGradient)" opacity="0.5"/>
+</svg>

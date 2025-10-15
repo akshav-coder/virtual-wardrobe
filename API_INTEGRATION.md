@@ -1,6 +1,6 @@
 # API Integration Guide
 
-This document explains how to use the RTK Query API integration in the Virtual Wardrobe app.
+This document explains how to use the RTK Query API integration in the WEARON app.
 
 ## Overview
 

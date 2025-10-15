@@ -1,4 +1,4 @@
-# Virtual Wardrobe - AI-Powered Personal Stylist
+# WEARON - AI-Powered Personal Stylist
 
 A modern React Native Expo app that helps you organize your wardrobe and create amazing outfits with AI-powered recommendations.
 
@@ -43,8 +43,8 @@ A modern React Native Expo app that helps you organize your wardrobe and create 
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/yourusername/virtual-wardrobe.git
-   cd virtual-wardrobe
+   git clone https://github.com/yourusername/wearon.git
+   cd wearon
    ```
 
 2. **Install dependencies**

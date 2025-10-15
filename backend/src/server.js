@@ -21,7 +21,7 @@ app.use("/uploads", express.static("uploads"));
 const connectDB = async () => {
   try {
     await mongoose.connect(
-      process.env.MONGODB_URI || "mongodb://localhost:27017/virtual-wardrobe"
+      process.env.MONGODB_URI || "mongodb://localhost:27017/wearon"
     );
     console.log("✅ MongoDB connected successfully");
   } catch (error) {
@@ -114,7 +114,7 @@ app.listen(PORT, HOST, () => {
   console.log(`🚀 Server running on ${HOST}:${PORT}`);
   console.log(`📱 Environment: ${process.env.NODE_ENV}`);
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
-  console.log(`🌐 Network access: http://10.74.215.78:${PORT}/health`);
+  console.log(`🌐 Network access: http://192.168.0.101:${PORT}/health`);
 });
 
 module.exports = app;

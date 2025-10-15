@@ -33,6 +33,7 @@ import {
   useGenerateRecommendationsMutation,
 } from "../services";
 import { showErrorMessage, showSuccessMessage } from "../utils/apiUtils";
+import Logo from "../components/Logo";
 
 const { width } = Dimensions.get("window");
 
@@ -439,12 +440,15 @@ const HomeScreen = ({ navigation }) => {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {/* Minimal Header */}
+        {/* Header with Logo */}
         <View style={styles.header}>
           <View style={styles.headerContent}>
-            <View>
-              <Text style={styles.greeting}>Good morning</Text>
-              <Text style={styles.subGreeting}>Ready to style today?</Text>
+            <View style={styles.headerLeft}>
+              <Logo size="small" showText={false} style={styles.logo} />
+              <View style={styles.greetingContainer}>
+                <Text style={styles.greeting}>Good morning</Text>
+                <Text style={styles.subGreeting}>Ready to style today?</Text>
+              </View>
             </View>
             <View style={styles.headerRight}>
               <View style={styles.weatherInfo}>
@@ -529,6 +533,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  logo: {
+    marginRight: 16,
+  },
+  greetingContainer: {
+    flex: 1,
   },
   greeting: {
     fontSize: 28,
