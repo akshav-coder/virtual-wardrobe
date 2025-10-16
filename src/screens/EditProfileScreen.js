@@ -25,7 +25,7 @@ import {
   useGetProfileQuery,
   useUpdateProfileMutation,
   useUpdatePreferencesMutation,
-  useUpdateBodyMeasurementsMutation,
+  useUpdateMeasurementsMutation,
 } from "../services";
 import { showErrorMessage, showSuccessMessage } from "../utils/apiUtils";
 
@@ -52,7 +52,7 @@ const EditProfileScreen = ({ navigation }) => {
     useUpdatePreferencesMutation();
 
   const [updateBodyMeasurements, { isLoading: isUpdatingMeasurements }] =
-    useUpdateBodyMeasurementsMutation();
+    useUpdateMeasurementsMutation();
 
   const user = profileData?.data?.user;
 
