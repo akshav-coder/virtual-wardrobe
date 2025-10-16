@@ -444,7 +444,12 @@ const HomeScreen = ({ navigation }) => {
         <View style={styles.header}>
           {/* Top row with Logo and Profile */}
           <View style={styles.headerTopRow}>
-            <Logo size="small" showText={false} style={styles.logo} />
+            <Logo
+              size="small"
+              // useWordLogo={true}
+              showText={false}
+              style={styles.logo}
+            />
             <TouchableOpacity
               onPress={() => navigation.navigate("Profile")}
               style={styles.profileButton}

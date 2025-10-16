@@ -5,7 +5,9 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
+    "icon": "./assets/app_icon_wearon.png",
     "splash": {
+      "image": "./assets/app_icon_wearon.png",
       "resizeMode": "contain",
       "backgroundColor": "#6366f1"
     },
@@ -15,7 +17,9 @@
       "bundleIdentifier": "com.wearon.app"
     },
     "android": {
+      "icon": "./assets/app_icon_wearon.png",
       "adaptiveIcon": {
+        "foregroundImage": "./assets/app_icon_wearon.png",
         "backgroundColor": "#6366f1"
       },
       "package": "com.wearon.app"
