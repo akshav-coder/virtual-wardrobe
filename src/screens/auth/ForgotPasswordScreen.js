@@ -7,6 +7,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Image,
 } from "react-native";
 import {
   Card,
@@ -128,7 +129,11 @@ const ForgotPasswordScreen = ({ navigation }) => {
                 style={styles.backIcon}
               />
               <View style={styles.logoContainer}>
-                <Ionicons name="lock-closed" size={60} color="white" />
+                <Image
+                  source={require("../../../assets/app_icon_wearon.png")}
+                  style={styles.logoImage}
+                  resizeMode="contain"
+                />
               </View>
               <Title style={styles.title}>Forgot Password?</Title>
               <Paragraph style={styles.subtitle}>
@@ -240,6 +245,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 20,
+  },
+  logoImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
   },
   successIconContainer: {
     width: 100,

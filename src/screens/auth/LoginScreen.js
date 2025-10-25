@@ -8,6 +8,7 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import {
   Card,
@@ -90,7 +91,11 @@ const LoginScreen = ({ navigation }) => {
             {/* Header */}
             <View style={styles.header}>
               <View style={styles.logoContainer}>
-                <Ionicons name="shirt" size={60} color="white" />
+                <Image
+                  source={require("../../../assets/app_icon_wearon.png")}
+                  style={styles.logoImage}
+                  resizeMode="contain"
+                />
               </View>
               <Title style={styles.title}>Welcome Back</Title>
               <Paragraph style={styles.subtitle}>
@@ -219,6 +224,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 20,
+  },
+  logoImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
   },
   title: {
     fontSize: 32,

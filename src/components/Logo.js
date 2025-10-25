@@ -1,9 +1,14 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 
-const Logo = ({ size = "medium", showText = true, style }) => {
+const Logo = ({
+  size = "medium",
+  showText = true,
+  style,
+  useWordLogo = false,
+}) => {
   const getSize = () => {
     switch (size) {
       case "small":
@@ -19,6 +24,24 @@ const Logo = ({ size = "medium", showText = true, style }) => {
 
   const sizes = getSize();
 
+  if (useWordLogo) {
+    return (
+      <View style={[styles.container, style]}>
+        <Image
+          source={require("../../assets/wearon_word_logo.png")}
+          style={[
+            // styles.wordLogoImage,
+            {
+              height: 64,
+              width: 128, // Approximate width for word logo
+            },
+          ]}
+          resizeMode="contain"
+        />
+      </View>
+    );
+  }
+
   return (
     <View
       style={[
@@ -27,27 +50,18 @@ const Logo = ({ size = "medium", showText = true, style }) => {
         style,
       ]}
     >
-      <LinearGradient
-        colors={["#667eea", "#764ba2"]}
-        style={[styles.gradient, { borderRadius: sizes.container / 2 }]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <View style={styles.logoContent}>
-          {/* Stylized W */}
-          <View style={styles.wContainer}>
-            <View style={[styles.wBar, styles.wBar1]} />
-            <View style={[styles.wBar, styles.wBar2]} />
-            <View style={[styles.wBar, styles.wBar3]} />
-            <View style={[styles.wBar, styles.wBar4]} />
-          </View>
-
-          {/* Fashion icon */}
-          <View style={styles.fashionIcon}>
-            <Ionicons name="shirt" size={sizes.icon * 0.4} color="white" />
-          </View>
-        </View>
-      </LinearGradient>
+      <Image
+        source={require("../../assets/app_icon_wearon.png")}
+        style={[
+          styles.logoImage,
+          {
+            width: sizes.container,
+            height: sizes.container,
+            borderRadius: sizes.container / 2,
+          },
+        ]}
+        resizeMode="contain"
+      />
 
       {showText && (
         <Text style={[styles.logoText, { fontSize: sizes.text }]}>WEARON</Text>
@@ -61,66 +75,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  gradient: {
-    width: "100%",
-    height: "100%",
-    alignItems: "center",
-    justifyContent: "center",
+  logoImage: {
     shadowColor: "#667eea",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
   },
-  logoContent: {
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
-  },
-  wContainer: {
-    position: "relative",
-    width: 24,
-    height: 24,
-  },
-  wBar: {
-    position: "absolute",
-    backgroundColor: "white",
-    borderRadius: 1,
-  },
-  wBar1: {
-    width: 3,
-    height: 20,
-    left: 0,
-    top: 2,
-  },
-  wBar2: {
-    width: 3,
-    height: 20,
-    left: 6,
-    top: 2,
-  },
-  wBar3: {
-    width: 3,
-    height: 20,
-    left: 12,
-    top: 2,
-  },
-  wBar4: {
-    width: 3,
-    height: 20,
-    left: 18,
-    top: 2,
-  },
-  fashionIcon: {
-    position: "absolute",
-    right: -8,
-    top: -2,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: 8,
-    padding: 2,
+  wordLogoImage: {
+    shadowColor: "#667eea",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
   logoText: {
-    marginTop: 8,
     fontWeight: "bold",
     color: "#1f2937",
     letterSpacing: 1,
