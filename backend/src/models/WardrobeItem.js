@@ -78,30 +78,7 @@ const wardrobeItemSchema = new mongoose.Schema(
       default: "USD",
       enum: ["USD", "EUR", "GBP", "CAD", "AUD"],
     },
-    image: {
-      type: String,
-      trim: true,
-      // Validate URL format if provided
-      validate: {
-        validator: function (v) {
-          if (!v) return true; // Allow empty
-          return /^https?:\/\/.+/.test(v);
-        },
-        message: "Image must be a valid URL",
-      },
-    },
-    images: [
-      {
-        type: String,
-        trim: true,
-        validate: {
-          validator: function (v) {
-            return /^https?:\/\/.+/.test(v);
-          },
-          message: "Image must be a valid URL",
-        },
-      },
-    ],
+
     description: {
       type: String,
       trim: true,
@@ -186,11 +163,6 @@ const wardrobeItemSchema = new mongoose.Schema(
         trim: true,
       },
       dominantColors: [String],
-      imageHash: {
-        type: String,
-        trim: true,
-      },
-      fileSize: Number,
       dimensions: {
         width: Number,
         height: Number,

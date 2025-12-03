@@ -27,7 +27,7 @@ import {
 } from "react-native-paper";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { useCreateItemMutation, useUploadImageMutation } from "../services";
+import { useCreateItemMutation } from "../services";
 import {
   showErrorMessage,
   showSuccessMessage,
@@ -38,7 +38,6 @@ const { width } = Dimensions.get("window");
 
 const AddItemScreen = ({ navigation }) => {
   const [createItem, { isLoading: isCreating }] = useCreateItemMutation();
-  const [uploadImage, { isLoading: isUploading }] = useUploadImageMutation();
   const [selectedMethod, setSelectedMethod] = useState("camera");
   const [formData, setFormData] = useState({
     name: "",
@@ -47,7 +46,6 @@ const AddItemScreen = ({ navigation }) => {
     color: "",
     size: "",
     price: "",
-    image: null,
     notes: "",
     tags: [],
   });
@@ -100,74 +98,21 @@ const AddItemScreen = ({ navigation }) => {
     "42",
   ];
 
-  const handleImagePicker = async () => {
-    const permissionResult =
-      await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-    if (permissionResult.granted === false) {
-      Alert.alert(
-        "Permission Required",
-        "Permission to access camera roll is required!"
-      );
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      setFormData({ ...formData, image: result.assets[0].uri });
-    }
-  };
-
-  const handleCamera = async () => {
-    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-
-    if (permissionResult.granted === false) {
-      Alert.alert(
-        "Permission Required",
-        "Permission to access camera is required!"
-      );
-      return;
-    }
-
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      setFormData({ ...formData, image: result.assets[0].uri });
-    }
-  };
 
   const handleSave = async () => {
-    if (!formData.name || !formData.category || !formData.image) {
+    if (!formData.name || !formData.category) {
       Alert.alert(
         "Missing Information",
-        "Please fill in all required fields and add an image."
+        "Please fill in all required fields."
       );
       return;
     }
 
+    console.log(formData)
+
     try {
-      let imageUrl = formData.image;
 
-      // Upload image if it's a local URI
-      if (formData.image && formData.image.startsWith("file://")) {
-        const formDataUpload = createFormData(
-          { tags: formData.tags.join(","), category: formData.category },
-          { uri: formData.image, type: "image/jpeg", name: "item.jpg" }
-        );
-
-        const uploadResult = await uploadImage(formDataUpload).unwrap();
-        imageUrl = uploadResult.data.url;
-      }
 
       const newItem = {
         name: formData.name,
@@ -176,7 +121,6 @@ const AddItemScreen = ({ navigation }) => {
         color: formData.color,
         size: formData.size,
         price: formData.price ? parseFloat(formData.price) : undefined,
-        image: imageUrl,
         notes: formData.notes,
         tags: formData.tags,
         season: "all-season", // Default value
@@ -190,6 +134,7 @@ const AddItemScreen = ({ navigation }) => {
       navigation.goBack();
     } catch (error) {
       showErrorMessage(error, Alert.alert, "Failed to add item");
+      console.log(error)
     }
   };
 
@@ -208,7 +153,7 @@ const AddItemScreen = ({ navigation }) => {
               style={[
                 styles.categoryOption,
                 formData.category === category.key &&
-                  styles.categoryOptionSelected,
+                styles.categoryOptionSelected,
               ]}
               onPress={() => {
                 setFormData({ ...formData, category: category.key });
@@ -226,7 +171,7 @@ const AddItemScreen = ({ navigation }) => {
                 style={[
                   styles.categoryOptionText,
                   formData.category === category.key &&
-                    styles.categoryOptionTextSelected,
+                  styles.categoryOptionTextSelected,
                 ]}
               >
                 {category.label}
@@ -320,95 +265,7 @@ const AddItemScreen = ({ navigation }) => {
         </View>
 
         {/* Image Section */}
-        <View style={styles.imageCard}>
-          <Text style={styles.sectionTitle}>📸 Item Photo</Text>
-          <View style={styles.imageSection}>
-            {formData.image ? (
-              <View style={styles.imageContainer}>
-                <Image
-                  source={{ uri: formData.image }}
-                  style={styles.itemImage}
-                />
-                <TouchableOpacity
-                  style={styles.removeImageButton}
-                  onPress={() => setFormData({ ...formData, image: null })}
-                >
-                  <Ionicons name="close-circle" size={24} color="#ef4444" />
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <TouchableOpacity
-                style={styles.imagePlaceholder}
-                onPress={
-                  selectedMethod === "camera" ? handleCamera : handleImagePicker
-                }
-              >
-                <View style={styles.placeholderIcon}>
-                  <Ionicons
-                    name={selectedMethod === "camera" ? "camera" : "image"}
-                    size={32}
-                    color="#6366f1"
-                  />
-                </View>
-                <Text style={styles.imagePlaceholderText}>
-                  {selectedMethod === "camera"
-                    ? "Take a photo"
-                    : "Choose from gallery"}
-                </Text>
-                <Text style={styles.imagePlaceholderSubtext}>
-                  Tap to add an image
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
 
-          {/* Method Selector */}
-          <View style={styles.methodSelectorContainer}>
-            <TouchableOpacity
-              style={[
-                styles.methodButton,
-                selectedMethod === "camera" && styles.methodButtonActive,
-              ]}
-              onPress={() => setSelectedMethod("camera")}
-            >
-              <Ionicons
-                name="camera"
-                size={20}
-                color={selectedMethod === "camera" ? "#6366f1" : "#6b7280"}
-              />
-              <Text
-                style={[
-                  styles.methodButtonText,
-                  selectedMethod === "camera" && styles.methodButtonTextActive,
-                ]}
-              >
-                Camera
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.methodButton,
-                selectedMethod === "gallery" && styles.methodButtonActive,
-              ]}
-              onPress={() => setSelectedMethod("gallery")}
-            >
-              <Ionicons
-                name="image"
-                size={20}
-                color={selectedMethod === "gallery" ? "#6366f1" : "#6b7280"}
-              />
-              <Text
-                style={[
-                  styles.methodButtonText,
-                  selectedMethod === "gallery" && styles.methodButtonTextActive,
-                ]}
-              >
-                Gallery
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
 
         {/* Basic Information */}
         <View style={styles.formCard}>
@@ -544,29 +401,19 @@ const AddItemScreen = ({ navigation }) => {
         <TouchableOpacity
           style={[
             styles.saveButton,
-            (!formData.name ||
-              !formData.category ||
-              !formData.image ||
-              isCreating ||
-              isUploading) &&
-              styles.saveButtonDisabled,
+            (!formData.name || !formData.category || isCreating) &&
+            styles.saveButtonDisabled,
           ]}
           onPress={handleSave}
-          disabled={
-            !formData.name ||
-            !formData.category ||
-            !formData.image ||
-            isCreating ||
-            isUploading
-          }
+          disabled={!formData.name || !formData.category || isCreating}
         >
-          {isCreating || isUploading ? (
+          {isCreating ? (
             <ActivityIndicator size="small" color="white" />
           ) : (
             <Ionicons name="checkmark-circle" size={20} color="white" />
           )}
           <Text style={styles.saveButtonText}>
-            {isCreating || isUploading ? "Adding..." : "Add to Wardrobe"}
+            {isCreating ? "Adding..." : "Add to Wardrobe"}
           </Text>
         </TouchableOpacity>
       </View>
