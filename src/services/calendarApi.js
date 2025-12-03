@@ -1,20 +1,7 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { api } from "./api";
 
 // Calendar API slice
-export const calendarApi = createApi({
-  reducerPath: "calendarApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: "http://192.168.0.100:3001/api/calendar",
-    prepareHeaders: (headers, { getState }) => {
-      const token = getState().auth?.token;
-      if (token) {
-        headers.set("authorization", `Bearer ${token}`);
-      }
-      headers.set("Content-Type", "application/json");
-      return headers;
-    },
-  }),
-  tagTypes: ["CalendarEvent"],
+export const calendarApi = api.injectEndpoints({
   endpoints: (builder) => ({
     // Get calendar events
     getEvents: builder.query({
@@ -25,21 +12,21 @@ export const calendarApi = createApi({
             queryParams.append(key, params[key]);
           }
         });
-        return `/?${queryParams.toString()}`;
+        return `calendar/?${queryParams.toString()}`;
       },
       providesTags: ["CalendarEvent"],
     }),
 
     // Get single event
     getEvent: builder.query({
-      query: (id) => `/${id}`,
+      query: (id) => `calendar/${id}`,
       providesTags: (result, error, id) => [{ type: "CalendarEvent", id }],
     }),
 
     // Create event
     createEvent: builder.mutation({
       query: (eventData) => ({
-        url: "/",
+        url: "calendar/",
         method: "POST",
         body: eventData,
       }),
@@ -49,7 +36,7 @@ export const calendarApi = createApi({
     // Update event
     updateEvent: builder.mutation({
       query: ({ id, ...eventData }) => ({
-        url: `/${id}`,
+        url: `calendar/${id}`,
         method: "PUT",
         body: eventData,
       }),
@@ -62,7 +49,7 @@ export const calendarApi = createApi({
     // Delete event
     deleteEvent: builder.mutation({
       query: (id) => ({
-        url: `/${id}`,
+        url: `calendar/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: ["CalendarEvent"],
@@ -77,25 +64,25 @@ export const calendarApi = createApi({
             queryParams.append(key, params[key]);
           }
         });
-        return `/upcoming?${queryParams.toString()}`;
+        return `calendar/upcoming?${queryParams.toString()}`;
       },
       providesTags: ["CalendarEvent"],
     }),
 
     // Get today's events
     getTodayEvents: builder.query({
-      query: () => "/today",
+      query: () => "calendar/today",
       providesTags: ["CalendarEvent"],
     }),
 
     // Get events by date
     getEventsByDate: builder.query({
-      query: (date) => `/date/${date}`,
+      query: (date) => `calendar/date/${date}`,
       providesTags: ["CalendarEvent"],
     }),
 
     // Get calendar statistics
-    getStats: builder.query({
+    getCalendarStats: builder.query({
       query: (params = {}) => {
         const queryParams = new URLSearchParams();
         Object.keys(params).forEach((key) => {
@@ -103,7 +90,7 @@ export const calendarApi = createApi({
             queryParams.append(key, params[key]);
           }
         });
-        return `/stats?${queryParams.toString()}`;
+        return `calendar/stats?${queryParams.toString()}`;
       },
       providesTags: ["CalendarEvent"],
     }),
@@ -111,7 +98,7 @@ export const calendarApi = createApi({
     // Assign outfit to event
     assignOutfit: builder.mutation({
       query: ({ id, outfitId }) => ({
-        url: `/${id}/outfit`,
+        url: `calendar/${id}/outfit`,
         method: "PUT",
         body: { outfitId },
       }),
@@ -122,15 +109,15 @@ export const calendarApi = createApi({
     }),
 
     // Get outfit recommendations for event
-    getOutfitRecommendations: builder.query({
-      query: (id) => `/${id}/recommendations`,
+    getCalendarOutfitRecommendations: builder.query({
+      query: (id) => `calendar/${id}/recommendations`,
       providesTags: ["CalendarEvent"],
     }),
 
     // Add reminder to event
     addReminder: builder.mutation({
       query: ({ id, reminder }) => ({
-        url: `/${id}/reminders/add`,
+        url: `calendar/${id}/reminders/add`,
         method: "PUT",
         body: reminder,
       }),
@@ -143,7 +130,7 @@ export const calendarApi = createApi({
     // Remove reminder from event
     removeReminder: builder.mutation({
       query: ({ id, reminder }) => ({
-        url: `/${id}/reminders/remove`,
+        url: `calendar/${id}/reminders/remove`,
         method: "PUT",
         body: reminder,
       }),
@@ -155,13 +142,13 @@ export const calendarApi = createApi({
 
     // Get events by occasion
     getEventsByOccasion: builder.query({
-      query: (occasion) => `/occasion/${occasion}`,
+      query: (occasion) => `calendar/occasion/${occasion}`,
       providesTags: ["CalendarEvent"],
     }),
 
     // Get events by priority
     getEventsByPriority: builder.query({
-      query: (priority) => `/priority/${priority}`,
+      query: (priority) => `calendar/priority/${priority}`,
       providesTags: ["CalendarEvent"],
     }),
 
@@ -174,24 +161,24 @@ export const calendarApi = createApi({
             queryParams.append(key, params[key]);
           }
         });
-        return `/busy-days?${queryParams.toString()}`;
+        return `calendar/busy-days?${queryParams.toString()}`;
       },
       providesTags: ["CalendarEvent"],
     }),
 
     // Bulk operations
-    bulkDelete: builder.mutation({
+    bulkDeleteCalendarEvents: builder.mutation({
       query: (ids) => ({
-        url: "/bulk/delete",
+        url: "calendar/bulk/delete",
         method: "DELETE",
         body: { ids },
       }),
       invalidatesTags: ["CalendarEvent"],
     }),
 
-    bulkUpdate: builder.mutation({
+    bulkUpdateCalendarEvents: builder.mutation({
       query: ({ ids, updates }) => ({
-        url: "/bulk/update",
+        url: "calendar/bulk/update",
         method: "PUT",
         body: { ids, updates },
       }),
@@ -210,16 +197,16 @@ export const {
   useGetUpcomingEventsQuery,
   useGetTodayEventsQuery,
   useGetEventsByDateQuery,
-  useGetStatsQuery,
+  useGetCalendarStatsQuery,
   useAssignOutfitMutation,
-  useGetOutfitRecommendationsQuery,
+  useGetCalendarOutfitRecommendationsQuery,
   useAddReminderMutation,
   useRemoveReminderMutation,
   useGetEventsByOccasionQuery,
   useGetEventsByPriorityQuery,
   useGetBusyDaysQuery,
-  useBulkDeleteMutation,
-  useBulkUpdateMutation,
+  useBulkDeleteCalendarEventsMutation,
+  useBulkUpdateCalendarEventsMutation,
 } = calendarApi;
 
 export default calendarApi;

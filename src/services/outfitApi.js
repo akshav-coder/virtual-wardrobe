@@ -1,20 +1,7 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { api } from "./api";
 
 // Outfit API slice
-export const outfitApi = createApi({
-  reducerPath: "outfitApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: "http://192.168.0.100:3001/api/outfit",
-    prepareHeaders: (headers, { getState }) => {
-      const token = getState().auth?.token;
-      if (token) {
-        headers.set("authorization", `Bearer ${token}`);
-      }
-      headers.set("Content-Type", "application/json");
-      return headers;
-    },
-  }),
-  tagTypes: ["Outfit"],
+export const outfitApi = api.injectEndpoints({
   endpoints: (builder) => ({
     // Get outfits
     getOutfits: builder.query({
@@ -25,21 +12,21 @@ export const outfitApi = createApi({
             queryParams.append(key, params[key]);
           }
         });
-        return `/?${queryParams.toString()}`;
+        return `outfit/?${queryParams.toString()}`;
       },
       providesTags: ["Outfit"],
     }),
 
     // Get single outfit
     getOutfit: builder.query({
-      query: (id) => `/${id}`,
+      query: (id) => `outfit/${id}`,
       providesTags: (result, error, id) => [{ type: "Outfit", id }],
     }),
 
     // Create outfit
     createOutfit: builder.mutation({
       query: (outfitData) => ({
-        url: "/",
+        url: "outfit/",
         method: "POST",
         body: outfitData,
       }),
@@ -49,7 +36,7 @@ export const outfitApi = createApi({
     // Update outfit
     updateOutfit: builder.mutation({
       query: ({ id, ...outfitData }) => ({
-        url: `/${id}`,
+        url: `outfit/${id}`,
         method: "PUT",
         body: outfitData,
       }),
@@ -62,7 +49,7 @@ export const outfitApi = createApi({
     // Delete outfit
     deleteOutfit: builder.mutation({
       query: (id) => ({
-        url: `/${id}`,
+        url: `outfit/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: ["Outfit"],
@@ -71,7 +58,7 @@ export const outfitApi = createApi({
     // Add item to outfit
     addItem: builder.mutation({
       query: ({ id, itemId, position = "primary" }) => ({
-        url: `/${id}/items`,
+        url: `outfit/${id}/items`,
         method: "POST",
         body: { itemId, position },
       }),
@@ -84,7 +71,7 @@ export const outfitApi = createApi({
     // Remove item from outfit
     removeItem: builder.mutation({
       query: ({ id, itemId }) => ({
-        url: `/${id}/items/${itemId}`,
+        url: `outfit/${id}/items/${itemId}`,
         method: "DELETE",
       }),
       invalidatesTags: (result, error, { id }) => [
@@ -94,9 +81,9 @@ export const outfitApi = createApi({
     }),
 
     // Update item in outfit
-    updateItem: builder.mutation({
+    updateOutfitItem: builder.mutation({
       query: ({ id, itemId, updates }) => ({
-        url: `/${id}/items/${itemId}`,
+        url: `outfit/${id}/items/${itemId}`,
         method: "PUT",
         body: updates,
       }),
@@ -115,30 +102,30 @@ export const outfitApi = createApi({
             queryParams.append(key, searchParams[key]);
           }
         });
-        return `/search?${queryParams.toString()}`;
+        return `outfit/search?${queryParams.toString()}`;
       },
       providesTags: ["Outfit"],
     }),
 
     // Get favorite outfits
-    getFavorites: builder.query({
-      query: () => "/favorites",
+    getFavoriteOutfits: builder.query({
+      query: () => "outfit/favorites",
       providesTags: ["Outfit"],
     }),
 
     // Toggle favorite status
-    toggleFavorite: builder.mutation({
+    toggleOutfitFavorite: builder.mutation({
       query: (id) => ({
-        url: `/${id}/favorite`,
+        url: `outfit/${id}/favorite`,
         method: "PUT",
       }),
       invalidatesTags: ["Outfit"],
     }),
 
     // Increment wear count
-    incrementWearCount: builder.mutation({
+    incrementOutfitWearCount: builder.mutation({
       query: (id) => ({
-        url: `/${id}/wear`,
+        url: `outfit/${id}/wear`,
         method: "PUT",
       }),
       invalidatesTags: ["Outfit"],
@@ -146,14 +133,14 @@ export const outfitApi = createApi({
 
     // Get outfit templates
     getTemplates: builder.query({
-      query: () => "/templates",
+      query: () => "outfit/templates",
       providesTags: ["Outfit"],
     }),
 
     // Create outfit from template
     createFromTemplate: builder.mutation({
       query: ({ templateId, customizations = {} }) => ({
-        url: "/templates",
+        url: "outfit/templates",
         method: "POST",
         body: { templateId, customizations },
       }),
@@ -169,7 +156,7 @@ export const outfitApi = createApi({
             queryParams.append(key, params[key]);
           }
         });
-        return `/scheduled?${queryParams.toString()}`;
+        return `outfit/scheduled?${queryParams.toString()}`;
       },
       providesTags: ["Outfit"],
     }),
@@ -177,7 +164,7 @@ export const outfitApi = createApi({
     // Schedule outfit
     scheduleOutfit: builder.mutation({
       query: ({ id, date, eventId }) => ({
-        url: `/${id}/schedule`,
+        url: `outfit/${id}/schedule`,
         method: "POST",
         body: { date, eventId },
       }),
@@ -193,14 +180,14 @@ export const outfitApi = createApi({
             queryParams.append(key, params[key]);
           }
         });
-        return `/weather-based?${queryParams.toString()}`;
+        return `outfit/weather-based?${queryParams.toString()}`;
       },
       providesTags: ["Outfit"],
     }),
 
     // Get outfit statistics
-    getStats: builder.query({
-      query: () => "/stats",
+    getOutfitStats: builder.query({
+      query: () => "outfit/stats",
       providesTags: ["Outfit"],
     }),
 
@@ -213,7 +200,7 @@ export const outfitApi = createApi({
             queryParams.append(key, params[key]);
           }
         });
-        return `/analytics?${queryParams.toString()}`;
+        return `outfit/analytics?${queryParams.toString()}`;
       },
       providesTags: ["Outfit"],
     }),
@@ -229,17 +216,17 @@ export const {
   useDeleteOutfitMutation,
   useAddItemMutation,
   useRemoveItemMutation,
-  useUpdateItemMutation,
+  useUpdateOutfitItemMutation,
   useSearchOutfitsQuery,
-  useGetFavoritesQuery,
-  useToggleFavoriteMutation,
-  useIncrementWearCountMutation,
+  useGetFavoriteOutfitsQuery,
+  useToggleOutfitFavoriteMutation,
+  useIncrementOutfitWearCountMutation,
   useGetTemplatesQuery,
   useCreateFromTemplateMutation,
   useGetScheduledOutfitsQuery,
   useScheduleOutfitMutation,
   useGetWeatherBasedOutfitsQuery,
-  useGetStatsQuery,
+  useGetOutfitStatsQuery,
   useGetAnalyticsQuery,
 } = outfitApi;
 

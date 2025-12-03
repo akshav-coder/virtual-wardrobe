@@ -1,30 +1,14 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { setupListeners } from "@reduxjs/toolkit/query";
-import authApi from "../services/authApi";
-import userApi from "../services/userApi";
-import wardrobeApi from "../services/wardrobeApi";
-import outfitApi from "../services/outfitApi";
-import weatherApi from "../services/weatherApi";
-import aiApi from "../services/aiApi";
-import calendarApi from "../services/calendarApi";
-import imageApi from "../services/imageApi";
-import analyticsApi from "../services/analyticsApi";
+import { api } from "../services/api";
 import authReducer from "./slices/authSlice";
 import preferencesReducer from "./slices/preferencesSlice";
 import tourReducer from "./slices/tourSlice";
 
 export const store = configureStore({
   reducer: {
-    // API slices
-    [authApi.reducerPath]: authApi.reducer,
-    [userApi.reducerPath]: userApi.reducer,
-    [wardrobeApi.reducerPath]: wardrobeApi.reducer,
-    [outfitApi.reducerPath]: outfitApi.reducer,
-    [weatherApi.reducerPath]: weatherApi.reducer,
-    [aiApi.reducerPath]: aiApi.reducer,
-    [calendarApi.reducerPath]: calendarApi.reducer,
-    [imageApi.reducerPath]: imageApi.reducer,
-    [analyticsApi.reducerPath]: analyticsApi.reducer,
+    // API slice
+    [api.reducerPath]: api.reducer,
     // Local slices
     auth: authReducer,
     preferences: preferencesReducer,
@@ -33,29 +17,9 @@ export const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
-        ignoredActions: [
-          authApi.util.resetApiState.type,
-          userApi.util.resetApiState.type,
-          wardrobeApi.util.resetApiState.type,
-          outfitApi.util.resetApiState.type,
-          weatherApi.util.resetApiState.type,
-          aiApi.util.resetApiState.type,
-          calendarApi.util.resetApiState.type,
-          imageApi.util.resetApiState.type,
-          analyticsApi.util.resetApiState.type,
-        ],
+        ignoredActions: [api.util.resetApiState.type],
       },
-    }).concat(
-      authApi.middleware,
-      userApi.middleware,
-      wardrobeApi.middleware,
-      outfitApi.middleware,
-      weatherApi.middleware,
-      aiApi.middleware,
-      calendarApi.middleware,
-      imageApi.middleware,
-      analyticsApi.middleware
-    ),
+    }).concat(api.middleware),
 });
 
 setupListeners(store.dispatch);

@@ -1,21 +1,12 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { api } from "./api";
 
 // Auth API slice
-export const authApi = createApi({
-  reducerPath: "authApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: "http://192.168.0.100:3001/api/auth",
-    prepareHeaders: (headers) => {
-      headers.set("Content-Type", "application/json");
-      return headers;
-    },
-  }),
-  tagTypes: ["Auth"],
+export const authApi = api.injectEndpoints({
   endpoints: (builder) => ({
     // Register user
     register: builder.mutation({
       query: (credentials) => ({
-        url: "/register",
+        url: "auth/register",
         method: "POST",
         body: credentials,
       }),
@@ -25,7 +16,7 @@ export const authApi = createApi({
     // Login user
     login: builder.mutation({
       query: (credentials) => ({
-        url: "/login",
+        url: "auth/login",
         method: "POST",
         body: credentials,
       }),
@@ -35,7 +26,7 @@ export const authApi = createApi({
     // Logout user
     logout: builder.mutation({
       query: () => ({
-        url: "/logout",
+        url: "auth/logout",
         method: "POST",
       }),
       invalidatesTags: ["Auth"],
@@ -44,7 +35,7 @@ export const authApi = createApi({
     // Forgot password
     forgotPassword: builder.mutation({
       query: (email) => ({
-        url: "/forgot-password",
+        url: "auth/forgot-password",
         method: "POST",
         body: { email },
       }),
@@ -53,7 +44,7 @@ export const authApi = createApi({
     // Reset password
     resetPassword: builder.mutation({
       query: ({ token, password }) => ({
-        url: "/reset-password",
+        url: "auth/reset-password",
         method: "POST",
         body: { token, password },
       }),
@@ -62,7 +53,7 @@ export const authApi = createApi({
     // Verify email
     verifyEmail: builder.mutation({
       query: (token) => ({
-        url: "/verify-email",
+        url: "auth/verify-email",
         method: "POST",
         body: { token },
       }),
@@ -71,7 +62,7 @@ export const authApi = createApi({
     // Resend verification email
     resendVerification: builder.mutation({
       query: (email) => ({
-        url: "/resend-verification",
+        url: "auth/resend-verification",
         method: "POST",
         body: { email },
       }),

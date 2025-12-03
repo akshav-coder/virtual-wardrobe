@@ -1,20 +1,7 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { api } from "./api";
 
 // Wardrobe API slice
-export const wardrobeApi = createApi({
-  reducerPath: "wardrobeApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: "http://192.168.0.100:3001/api/wardrobe",
-    prepareHeaders: (headers, { getState }) => {
-      const token = getState().auth?.token;
-      if (token) {
-        headers.set("authorization", `Bearer ${token}`);
-      }
-      headers.set("Content-Type", "application/json");
-      return headers;
-    },
-  }),
-  tagTypes: ["WardrobeItem"],
+export const wardrobeApi = api.injectEndpoints({
   endpoints: (builder) => ({
     // Get wardrobe items
     getItems: builder.query({
@@ -25,21 +12,21 @@ export const wardrobeApi = createApi({
             queryParams.append(key, params[key]);
           }
         });
-        return `/?${queryParams.toString()}`;
+        return `wardrobe/?${queryParams.toString()}`;
       },
       providesTags: ["WardrobeItem"],
     }),
 
     // Get single wardrobe item
     getItem: builder.query({
-      query: (id) => `/${id}`,
+      query: (id) => `wardrobe/${id}`,
       providesTags: (result, error, id) => [{ type: "WardrobeItem", id }],
     }),
 
     // Create wardrobe item
     createItem: builder.mutation({
       query: (itemData) => ({
-        url: "/",
+        url: "wardrobe/",
         method: "POST",
         body: itemData,
       }),
@@ -49,7 +36,7 @@ export const wardrobeApi = createApi({
     // Update wardrobe item
     updateItem: builder.mutation({
       query: ({ id, ...itemData }) => ({
-        url: `/${id}`,
+        url: `wardrobe/${id}`,
         method: "PUT",
         body: itemData,
       }),
@@ -62,7 +49,7 @@ export const wardrobeApi = createApi({
     // Delete wardrobe item
     deleteItem: builder.mutation({
       query: (id) => ({
-        url: `/${id}`,
+        url: `wardrobe/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: ["WardrobeItem"],
@@ -77,21 +64,21 @@ export const wardrobeApi = createApi({
             queryParams.append(key, searchParams[key]);
           }
         });
-        return `/search?${queryParams.toString()}`;
+        return `wardrobe/search?${queryParams.toString()}`;
       },
       providesTags: ["WardrobeItem"],
     }),
 
     // Get favorite items
     getFavorites: builder.query({
-      query: () => "/favorites",
+      query: () => "wardrobe/favorites",
       providesTags: ["WardrobeItem"],
     }),
 
     // Toggle favorite status
     toggleFavorite: builder.mutation({
       query: (id) => ({
-        url: `/${id}/favorite`,
+        url: `wardrobe/${id}/favorite`,
         method: "PUT",
       }),
       invalidatesTags: ["WardrobeItem"],
@@ -100,7 +87,7 @@ export const wardrobeApi = createApi({
     // Increment wear count
     incrementWearCount: builder.mutation({
       query: (id) => ({
-        url: `/${id}/wear`,
+        url: `wardrobe/${id}/wear`,
         method: "PUT",
       }),
       invalidatesTags: ["WardrobeItem"],
@@ -108,35 +95,35 @@ export const wardrobeApi = createApi({
 
     // Get recently added items
     getRecentItems: builder.query({
-      query: (limit = 10) => `/recent?limit=${limit}`,
+      query: (limit = 10) => `wardrobe/recent?limit=${limit}`,
       providesTags: ["WardrobeItem"],
     }),
 
     // Get wardrobe statistics
-    getStats: builder.query({
-      query: () => "/stats",
+    getWardrobeStats: builder.query({
+      query: () => "wardrobe/stats",
       providesTags: ["WardrobeItem"],
     }),
 
     // Get wardrobe overview
     getOverview: builder.query({
-      query: () => "/stats/overview",
+      query: () => "wardrobe/stats/overview",
       providesTags: ["WardrobeItem"],
     }),
 
     // Bulk operations
-    bulkDelete: builder.mutation({
+    bulkDeleteWardrobeItems: builder.mutation({
       query: (ids) => ({
-        url: "/bulk/delete",
+        url: "wardrobe/bulk/delete",
         method: "DELETE",
         body: { ids },
       }),
       invalidatesTags: ["WardrobeItem"],
     }),
 
-    bulkUpdate: builder.mutation({
+    bulkUpdateWardrobeItems: builder.mutation({
       query: ({ ids, updates }) => ({
-        url: "/bulk/update",
+        url: "wardrobe/bulk/update",
         method: "PUT",
         body: { ids, updates },
       }),
@@ -157,10 +144,10 @@ export const {
   useToggleFavoriteMutation,
   useIncrementWearCountMutation,
   useGetRecentItemsQuery,
-  useGetStatsQuery,
+  useGetWardrobeStatsQuery,
   useGetOverviewQuery,
-  useBulkDeleteMutation,
-  useBulkUpdateMutation,
+  useBulkDeleteWardrobeItemsMutation,
+  useBulkUpdateWardrobeItemsMutation,
 } = wardrobeApi;
 
 export default wardrobeApi;

@@ -30,8 +30,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSelector, useDispatch } from "react-redux";
 import {
   useGetProfileQuery,
-  useGetStatsQuery,
-  useUpdatePreferencesMutation,
+  useGetUserStatsQuery,
+  useUpdateUserPreferencesMutation,
   useLogoutMutation,
 } from "../services";
 import { updatePreferences } from "../store/slices/preferencesSlice";
@@ -59,11 +59,11 @@ const ProfileScreen = ({ navigation }) => {
     data: statsData,
     isLoading: isStatsLoading,
     refetch: refetchStats,
-  } = useGetStatsQuery(undefined, {
+  } = useGetUserStatsQuery(undefined, {
     skip: !auth.isAuthenticated,
   });
 
-  const [updatePreferencesMutation] = useUpdatePreferencesMutation();
+  const [updatePreferencesMutation] = useUpdateUserPreferencesMutation();
   const [logoutMutation] = useLogoutMutation();
 
   const user = profileData?.data?.user || auth.user;
@@ -359,18 +359,18 @@ const ProfileScreen = ({ navigation }) => {
                         activity.type === "outfit_created"
                           ? "sparkles"
                           : activity.type === "item_added"
-                          ? "add-circle"
-                          : activity.type === "outfit_worn"
-                          ? "checkmark-circle"
-                          : "heart",
+                            ? "add-circle"
+                            : activity.type === "outfit_worn"
+                              ? "checkmark-circle"
+                              : "heart",
                       color:
                         activity.type === "outfit_created"
                           ? "#8b5cf6"
                           : activity.type === "item_added"
-                          ? "#10b981"
-                          : activity.type === "outfit_worn"
-                          ? "#f59e0b"
-                          : "#ec4899",
+                            ? "#10b981"
+                            : activity.type === "outfit_worn"
+                              ? "#f59e0b"
+                              : "#ec4899",
                       text: activity.message,
                       time: new Date(activity.timestamp).toLocaleDateString(),
                     }}

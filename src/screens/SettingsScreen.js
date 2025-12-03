@@ -27,9 +27,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSelector, useDispatch } from "react-redux";
 import {
   useGetProfileQuery,
-  useUpdatePreferencesMutation,
+  useUpdateUserPreferencesMutation,
   useLogoutMutation,
-  useGetStatsQuery,
+  useGetUserStatsQuery,
 } from "../services";
 import { logout } from "../store/slices/authSlice";
 import { showErrorMessage, showSuccessMessage } from "../utils/apiUtils";
@@ -54,12 +54,12 @@ const SettingsScreen = ({ navigation }) => {
     data: statsData,
     isLoading: isLoadingStats,
     refetch: refetchStats,
-  } = useGetStatsQuery(undefined, {
+  } = useGetUserStatsQuery(undefined, {
     skip: !auth.isAuthenticated,
   });
 
   const [updatePreferences, { isLoading: isUpdatingPreferences }] =
-    useUpdatePreferencesMutation();
+    useUpdateUserPreferencesMutation();
 
   const [logoutMutation, { isLoading: isLoggingOut }] = useLogoutMutation();
 

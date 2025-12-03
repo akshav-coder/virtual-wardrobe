@@ -1,25 +1,12 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { api } from "./api";
 
 // Analytics API slice
-export const analyticsApi = createApi({
-  reducerPath: "analyticsApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: "http://192.168.0.100:3001/api/analytics",
-    prepareHeaders: (headers, { getState }) => {
-      const token = getState().auth?.token;
-      if (token) {
-        headers.set("authorization", `Bearer ${token}`);
-      }
-      headers.set("Content-Type", "application/json");
-      return headers;
-    },
-  }),
-  tagTypes: ["Analytics"],
+export const analyticsApi = api.injectEndpoints({
   endpoints: (builder) => ({
     // Track analytics event
     trackEvent: builder.mutation({
       query: (eventData) => ({
-        url: "/track",
+        url: "analytics/track",
         method: "POST",
         body: eventData,
       }),
@@ -27,7 +14,7 @@ export const analyticsApi = createApi({
     }),
 
     // Get analytics events
-    getEvents: builder.query({
+    getAnalyticsEvents: builder.query({
       query: (params = {}) => {
         const queryParams = new URLSearchParams();
         Object.keys(params).forEach((key) => {
@@ -35,13 +22,13 @@ export const analyticsApi = createApi({
             queryParams.append(key, params[key]);
           }
         });
-        return `/events?${queryParams.toString()}`;
+        return `analytics/events?${queryParams.toString()}`;
       },
       providesTags: ["Analytics"],
     }),
 
     // Get analytics dashboard
-    getDashboard: builder.query({
+    getAnalyticsDashboard: builder.query({
       query: (params = {}) => {
         const queryParams = new URLSearchParams();
         Object.keys(params).forEach((key) => {
@@ -49,13 +36,13 @@ export const analyticsApi = createApi({
             queryParams.append(key, params[key]);
           }
         });
-        return `/dashboard?${queryParams.toString()}`;
+        return `analytics/dashboard?${queryParams.toString()}`;
       },
       providesTags: ["Analytics"],
     }),
 
     // Get user statistics
-    getUserStats: builder.query({
+    getAnalyticsUserStats: builder.query({
       query: (params = {}) => {
         const queryParams = new URLSearchParams();
         Object.keys(params).forEach((key) => {
@@ -63,7 +50,7 @@ export const analyticsApi = createApi({
             queryParams.append(key, params[key]);
           }
         });
-        return `/stats?${queryParams.toString()}`;
+        return `analytics/stats?${queryParams.toString()}`;
       },
       providesTags: ["Analytics"],
     }),
@@ -77,7 +64,7 @@ export const analyticsApi = createApi({
             queryParams.append(key, params[key]);
           }
         });
-        return `/event-types?${queryParams.toString()}`;
+        return `analytics/event-types?${queryParams.toString()}`;
       },
       providesTags: ["Analytics"],
     }),
@@ -91,7 +78,7 @@ export const analyticsApi = createApi({
             queryParams.append(key, params[key]);
           }
         });
-        return `/categories?${queryParams.toString()}`;
+        return `analytics/categories?${queryParams.toString()}`;
       },
       providesTags: ["Analytics"],
     }),
@@ -105,7 +92,7 @@ export const analyticsApi = createApi({
             queryParams.append(key, params[key]);
           }
         });
-        return `/daily?${queryParams.toString()}`;
+        return `analytics/daily?${queryParams.toString()}`;
       },
       providesTags: ["Analytics"],
     }),
@@ -119,7 +106,7 @@ export const analyticsApi = createApi({
             queryParams.append(key, params[key]);
           }
         });
-        return `/hourly?${queryParams.toString()}`;
+        return `analytics/hourly?${queryParams.toString()}`;
       },
       providesTags: ["Analytics"],
     }),
@@ -133,7 +120,7 @@ export const analyticsApi = createApi({
             queryParams.append(key, params[key]);
           }
         });
-        return `/items?${queryParams.toString()}`;
+        return `analytics/items?${queryParams.toString()}`;
       },
       providesTags: ["Analytics"],
     }),
@@ -147,7 +134,7 @@ export const analyticsApi = createApi({
             queryParams.append(key, params[key]);
           }
         });
-        return `/searches?${queryParams.toString()}`;
+        return `analytics/searches?${queryParams.toString()}`;
       },
       providesTags: ["Analytics"],
     }),
@@ -161,7 +148,7 @@ export const analyticsApi = createApi({
             queryParams.append(key, params[key]);
           }
         });
-        return `/recommendations?${queryParams.toString()}`;
+        return `analytics/recommendations?${queryParams.toString()}`;
       },
       providesTags: ["Analytics"],
     }),
@@ -175,7 +162,7 @@ export const analyticsApi = createApi({
             queryParams.append(key, params[key]);
           }
         });
-        return `/wardrobe?${queryParams.toString()}`;
+        return `analytics/wardrobe?${queryParams.toString()}`;
       },
       providesTags: ["Analytics"],
     }),
@@ -189,7 +176,7 @@ export const analyticsApi = createApi({
             queryParams.append(key, params[key]);
           }
         });
-        return `/behavior?${queryParams.toString()}`;
+        return `analytics/behavior?${queryParams.toString()}`;
       },
       providesTags: ["Analytics"],
     }),
@@ -203,7 +190,7 @@ export const analyticsApi = createApi({
             queryParams.append(key, params[key]);
           }
         });
-        return `/performance?${queryParams.toString()}`;
+        return `analytics/performance?${queryParams.toString()}`;
       },
       providesTags: ["Analytics"],
     }),
@@ -211,7 +198,7 @@ export const analyticsApi = createApi({
     // Export analytics data
     exportAnalytics: builder.mutation({
       query: (params = {}) => ({
-        url: "/export",
+        url: "analytics/export",
         method: "POST",
         body: params,
       }),
@@ -222,9 +209,9 @@ export const analyticsApi = createApi({
 // Export hooks
 export const {
   useTrackEventMutation,
-  useGetEventsQuery,
-  useGetDashboardQuery,
-  useGetUserStatsQuery,
+  useGetAnalyticsEventsQuery,
+  useGetAnalyticsDashboardQuery,
+  useGetAnalyticsUserStatsQuery,
   useGetEventTypeStatsQuery,
   useGetCategoryStatsQuery,
   useGetDailyActivityQuery,

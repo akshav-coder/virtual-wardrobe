@@ -1,20 +1,7 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { api } from "./api";
 
 // Image API slice
-export const imageApi = createApi({
-  reducerPath: "imageApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: "http://192.168.0.100:3001/api/image",
-    prepareHeaders: (headers, { getState }) => {
-      const token = getState().auth?.token;
-      if (token) {
-        headers.set("authorization", `Bearer ${token}`);
-      }
-      // Don't set Content-Type for file uploads
-      return headers;
-    },
-  }),
-  tagTypes: ["Image"],
+export const imageApi = api.injectEndpoints({
   endpoints: (builder) => ({
     // Get user images
     getImages: builder.query({
@@ -25,21 +12,21 @@ export const imageApi = createApi({
             queryParams.append(key, params[key]);
           }
         });
-        return `/?${queryParams.toString()}`;
+        return `image/?${queryParams.toString()}`;
       },
       providesTags: ["Image"],
     }),
 
     // Get single image
     getImage: builder.query({
-      query: (id) => `/${id}`,
+      query: (id) => `image/${id}`,
       providesTags: (result, error, id) => [{ type: "Image", id }],
     }),
 
     // Upload image
     uploadImage: builder.mutation({
       query: (formData) => ({
-        url: "/",
+        url: "image/",
         method: "POST",
         body: formData,
       }),
@@ -49,7 +36,7 @@ export const imageApi = createApi({
     // Delete image
     deleteImage: builder.mutation({
       query: (id) => ({
-        url: `/${id}`,
+        url: `image/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: ["Image"],
@@ -58,58 +45,58 @@ export const imageApi = createApi({
     // Process image
     processImage: builder.mutation({
       query: (id) => ({
-        url: `/${id}/process`,
+        url: `image/${id}/process`,
         method: "POST",
       }),
       invalidatesTags: (result, error, id) => ["Image", { type: "Image", id }],
     }),
 
     // Get image statistics
-    getStats: builder.query({
-      query: () => "/stats",
+    getImageStats: builder.query({
+      query: () => "image/stats",
       providesTags: ["Image"],
     }),
 
     // Get images by color
     getImagesByColor: builder.query({
-      query: (color) => `/color/${color}`,
+      query: (color) => `image/color/${color}`,
       providesTags: ["Image"],
     }),
 
     // Get images by style
     getImagesByStyle: builder.query({
-      query: (styleTag) => `/style/${styleTag}`,
+      query: (styleTag) => `image/style/${styleTag}`,
       providesTags: ["Image"],
     }),
 
     // Get image analysis
     getImageAnalysis: builder.query({
-      query: (id) => `/${id}/analysis`,
+      query: (id) => `image/${id}/analysis`,
       providesTags: (result, error, id) => [{ type: "Image", id }],
     }),
 
     // Get color palette
     getColorPalette: builder.query({
-      query: (id) => `/${id}/colors`,
+      query: (id) => `image/${id}/colors`,
       providesTags: (result, error, id) => [{ type: "Image", id }],
     }),
 
     // Get style tags
     getStyleTags: builder.query({
-      query: (id) => `/${id}/style`,
+      query: (id) => `image/${id}/style`,
       providesTags: (result, error, id) => [{ type: "Image", id }],
     }),
 
     // Get thumbnails
     getThumbnails: builder.query({
-      query: (id) => `/${id}/thumbnails`,
+      query: (id) => `image/${id}/thumbnails`,
       providesTags: (result, error, id) => [{ type: "Image", id }],
     }),
 
     // Update image tags
     updateTags: builder.mutation({
       query: ({ id, tags }) => ({
-        url: `/${id}/tags`,
+        url: `image/${id}/tags`,
         method: "PUT",
         body: { tags },
       }),
@@ -122,7 +109,7 @@ export const imageApi = createApi({
     // Set image privacy
     setPrivacy: builder.mutation({
       query: ({ id, isPublic }) => ({
-        url: `/${id}/privacy`,
+        url: `image/${id}/privacy`,
         method: "PUT",
         body: { isPublic },
       }),
@@ -133,18 +120,18 @@ export const imageApi = createApi({
     }),
 
     // Bulk operations
-    bulkDelete: builder.mutation({
+    bulkDeleteImages: builder.mutation({
       query: (ids) => ({
-        url: "/bulk/delete",
+        url: "image/bulk/delete",
         method: "DELETE",
         body: { ids },
       }),
       invalidatesTags: ["Image"],
     }),
 
-    bulkUpdate: builder.mutation({
+    bulkUpdateImages: builder.mutation({
       query: ({ ids, updates }) => ({
-        url: "/bulk/update",
+        url: "image/bulk/update",
         method: "PUT",
         body: { ids, updates },
       }),
@@ -160,7 +147,7 @@ export const {
   useUploadImageMutation,
   useDeleteImageMutation,
   useProcessImageMutation,
-  useGetStatsQuery,
+  useGetImageStatsQuery,
   useGetImagesByColorQuery,
   useGetImagesByStyleQuery,
   useGetImageAnalysisQuery,
@@ -169,8 +156,8 @@ export const {
   useGetThumbnailsQuery,
   useUpdateTagsMutation,
   useSetPrivacyMutation,
-  useBulkDeleteMutation,
-  useBulkUpdateMutation,
+  useBulkDeleteImagesMutation,
+  useBulkUpdateImagesMutation,
 } = imageApi;
 
 export default imageApi;

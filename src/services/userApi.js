@@ -1,31 +1,18 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { api } from "./api";
 
 // User API slice
-export const userApi = createApi({
-  reducerPath: "userApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: "http://192.168.0.100:3001/api/user",
-    prepareHeaders: (headers, { getState }) => {
-      const token = getState().auth?.token;
-      if (token) {
-        headers.set("authorization", `Bearer ${token}`);
-      }
-      headers.set("Content-Type", "application/json");
-      return headers;
-    },
-  }),
-  tagTypes: ["User"],
+export const userApi = api.injectEndpoints({
   endpoints: (builder) => ({
     // Get user profile
     getProfile: builder.query({
-      query: () => "/profile",
+      query: () => "user/profile",
       providesTags: ["User"],
     }),
 
     // Update user profile
     updateProfile: builder.mutation({
       query: (profileData) => ({
-        url: "/profile",
+        url: "user/profile",
         method: "PUT",
         body: profileData,
       }),
@@ -33,15 +20,15 @@ export const userApi = createApi({
     }),
 
     // Get user statistics
-    getStats: builder.query({
-      query: () => "/stats",
+    getUserStats: builder.query({
+      query: () => "user/stats",
       providesTags: ["User"],
     }),
 
     // Update user preferences
-    updatePreferences: builder.mutation({
+    updateUserPreferences: builder.mutation({
       query: (preferences) => ({
-        url: "/preferences",
+        url: "user/preferences",
         method: "PUT",
         body: preferences,
       }),
@@ -51,7 +38,7 @@ export const userApi = createApi({
     // Update body measurements
     updateMeasurements: builder.mutation({
       query: (measurements) => ({
-        url: "/measurements",
+        url: "user/measurements",
         method: "PUT",
         body: measurements,
       }),
@@ -61,7 +48,7 @@ export const userApi = createApi({
     // Change password
     changePassword: builder.mutation({
       query: ({ currentPassword, newPassword }) => ({
-        url: "/password",
+        url: "user/password",
         method: "PUT",
         body: { currentPassword, newPassword },
       }),
@@ -70,7 +57,7 @@ export const userApi = createApi({
     // Delete user account
     deleteAccount: builder.mutation({
       query: (password) => ({
-        url: "/delete",
+        url: "user/delete",
         method: "DELETE",
         body: { password },
       }),
@@ -79,7 +66,7 @@ export const userApi = createApi({
 
     // Get user dashboard data
     getDashboard: builder.query({
-      query: () => "/dashboard",
+      query: () => "user/dashboard",
       providesTags: ["User"],
     }),
   }),
@@ -89,8 +76,8 @@ export const userApi = createApi({
 export const {
   useGetProfileQuery,
   useUpdateProfileMutation,
-  useGetStatsQuery,
-  useUpdatePreferencesMutation,
+  useGetUserStatsQuery,
+  useUpdateUserPreferencesMutation,
   useUpdateMeasurementsMutation,
   useChangePasswordMutation,
   useDeleteAccountMutation,

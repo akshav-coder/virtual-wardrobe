@@ -1,20 +1,7 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { api } from "./api";
 
 // AI API slice
-export const aiApi = createApi({
-  reducerPath: "aiApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: "http://192.168.0.100:3001/api/ai",
-    prepareHeaders: (headers, { getState }) => {
-      const token = getState().auth?.token;
-      if (token) {
-        headers.set("authorization", `Bearer ${token}`);
-      }
-      headers.set("Content-Type", "application/json");
-      return headers;
-    },
-  }),
-  tagTypes: ["AIRecommendation"],
+export const aiApi = api.injectEndpoints({
   endpoints: (builder) => ({
     // Get AI recommendations
     getRecommendations: builder.query({
@@ -25,7 +12,7 @@ export const aiApi = createApi({
             queryParams.append(key, params[key]);
           }
         });
-        return `/recommendations?${queryParams.toString()}`;
+        return `ai/recommendations?${queryParams.toString()}`;
       },
       providesTags: ["AIRecommendation"],
     }),
@@ -33,7 +20,7 @@ export const aiApi = createApi({
     // Generate new AI recommendations
     generateRecommendations: builder.mutation({
       query: (params = {}) => ({
-        url: "/recommendations/generate",
+        url: "ai/recommendations/generate",
         method: "POST",
         body: params,
       }),
@@ -43,7 +30,7 @@ export const aiApi = createApi({
     // Add feedback to recommendation
     addFeedback: builder.mutation({
       query: ({ id, feedback }) => ({
-        url: `/recommendations/${id}/feedback`,
+        url: `ai/recommendations/${id}/feedback`,
         method: "PUT",
         body: feedback,
       }),
@@ -54,14 +41,14 @@ export const aiApi = createApi({
     }),
 
     // Get AI statistics
-    getStats: builder.query({
-      query: () => "/stats",
+    getAiStats: builder.query({
+      query: () => "ai/stats",
       providesTags: ["AIRecommendation"],
     }),
 
     // Get style analysis
     getStyleAnalysis: builder.query({
-      query: () => "/style-analysis",
+      query: () => "ai/style-analysis",
       providesTags: ["AIRecommendation"],
     }),
 
@@ -74,7 +61,7 @@ export const aiApi = createApi({
             queryParams.append(key, params[key]);
           }
         });
-        return `/color-recommendations?${queryParams.toString()}`;
+        return `ai/color-recommendations?${queryParams.toString()}`;
       },
       providesTags: ["AIRecommendation"],
     }),
@@ -88,7 +75,7 @@ export const aiApi = createApi({
             queryParams.append(key, params[key]);
           }
         });
-        return `/occasion-recommendations?${queryParams.toString()}`;
+        return `ai/occasion-recommendations?${queryParams.toString()}`;
       },
       providesTags: ["AIRecommendation"],
     }),
@@ -102,7 +89,7 @@ export const aiApi = createApi({
             queryParams.append(key, params[key]);
           }
         });
-        return `/weather-recommendations?${queryParams.toString()}`;
+        return `ai/weather-recommendations?${queryParams.toString()}`;
       },
       providesTags: ["AIRecommendation"],
     }),
@@ -116,7 +103,7 @@ export const aiApi = createApi({
             queryParams.append(key, params[key]);
           }
         });
-        return `/personalized?${queryParams.toString()}`;
+        return `ai/personalized?${queryParams.toString()}`;
       },
       providesTags: ["AIRecommendation"],
     }),
@@ -130,7 +117,7 @@ export const aiApi = createApi({
             queryParams.append(key, params[key]);
           }
         });
-        return `/history?${queryParams.toString()}`;
+        return `ai/history?${queryParams.toString()}`;
       },
       providesTags: ["AIRecommendation"],
     }),
@@ -138,7 +125,7 @@ export const aiApi = createApi({
     // Delete recommendation
     deleteRecommendation: builder.mutation({
       query: (id) => ({
-        url: `/recommendations/${id}`,
+        url: `ai/recommendations/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: ["AIRecommendation"],
@@ -146,14 +133,14 @@ export const aiApi = createApi({
 
     // Get recommendation preferences
     getPreferences: builder.query({
-      query: () => "/preferences",
+      query: () => "ai/preferences",
       providesTags: ["AIRecommendation"],
     }),
 
     // Update recommendation preferences
-    updatePreferences: builder.mutation({
+    updateAiPreferences: builder.mutation({
       query: (preferences) => ({
-        url: "/preferences",
+        url: "ai/preferences",
         method: "PUT",
         body: preferences,
       }),
@@ -167,7 +154,7 @@ export const {
   useGetRecommendationsQuery,
   useGenerateRecommendationsMutation,
   useAddFeedbackMutation,
-  useGetStatsQuery,
+  useGetAiStatsQuery,
   useGetStyleAnalysisQuery,
   useGetColorRecommendationsQuery,
   useGetOccasionRecommendationsQuery,
@@ -176,7 +163,7 @@ export const {
   useGetRecommendationHistoryQuery,
   useDeleteRecommendationMutation,
   useGetPreferencesQuery,
-  useUpdatePreferencesMutation,
+  useUpdateAiPreferencesMutation,
 } = aiApi;
 
 export default aiApi;
