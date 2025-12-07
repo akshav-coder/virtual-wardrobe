@@ -27,7 +27,7 @@ import {
 } from "react-native-paper";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { useCreateItemMutation } from "../services";
+import { useCreateItemMutation, useUploadImageMutation } from "../services";
 import {
   showErrorMessage,
   showSuccessMessage,
@@ -38,7 +38,9 @@ const { width } = Dimensions.get("window");
 
 const AddItemScreen = ({ navigation }) => {
   const [createItem, { isLoading: isCreating }] = useCreateItemMutation();
+  const [uploadImage, { isLoading: isUploading }] = useUploadImageMutation();
   const [selectedMethod, setSelectedMethod] = useState("camera");
+  const [image, setImage] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     brand: "",
@@ -100,6 +102,50 @@ const AddItemScreen = ({ navigation }) => {
 
 
 
+  const pickImage = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission denied",
+          "Sorry, we need camera roll permissions to make this work!"
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.8,
+      });
+
+      if (!result.canceled) {
+        setImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.log("Error picking image:", error);
+      Alert.alert("Error", "Failed to pick image from gallery");
+    }
+  };
+
+  const takePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permission denied",
+        "Sorry, we need camera permissions to make this work!"
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+    }
+  };
+
   const handleSave = async () => {
     if (!formData.name || !formData.category) {
       Alert.alert(
@@ -109,10 +155,20 @@ const AddItemScreen = ({ navigation }) => {
       return;
     }
 
-    console.log(formData)
-
     try {
+      let imageUrl = null;
 
+      if (image) {
+        const formData = new FormData();
+        formData.append("image", {
+          uri: image,
+          name: "photo.jpg",
+          type: "image/jpeg",
+        });
+
+        const uploadResult = await uploadImage(formData).unwrap();
+        imageUrl = uploadResult.data.image.url;
+      }
 
       const newItem = {
         name: formData.name,
@@ -127,6 +183,7 @@ const AddItemScreen = ({ navigation }) => {
         occasions: ["casual"], // Default value
         minTemperature: 10, // Default values
         maxTemperature: 30,
+        imageUrl: imageUrl,
       };
 
       await createItem(newItem).unwrap();
@@ -134,7 +191,7 @@ const AddItemScreen = ({ navigation }) => {
       navigation.goBack();
     } catch (error) {
       showErrorMessage(error, Alert.alert, "Failed to add item");
-      console.log(error)
+      console.log(error);
     }
   };
 
@@ -265,6 +322,87 @@ const AddItemScreen = ({ navigation }) => {
         </View>
 
         {/* Image Section */}
+        <View style={styles.imageCard}>
+          <Text style={styles.sectionTitle}>📸 Add Photo</Text>
+
+          <View style={styles.imageSection}>
+            {image ? (
+              <View style={styles.imageContainer}>
+                <Image source={{ uri: image }} style={styles.itemImage} />
+                <TouchableOpacity
+                  style={styles.removeImageButton}
+                  onPress={() => setImage(null)}
+                >
+                  <Ionicons name="close" size={20} color="#ef4444" />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={styles.imagePlaceholder}
+                onPress={() => selectedMethod === 'camera' ? takePhoto() : pickImage()}
+              >
+                <View style={styles.placeholderIcon}>
+                  <Ionicons
+                    name={selectedMethod === 'camera' ? "camera" : "images"}
+                    size={32}
+                    color="#6366f1"
+                  />
+                </View>
+                <Text style={styles.imagePlaceholderText}>
+                  {selectedMethod === 'camera' ? "Take a photo" : "Select from gallery"}
+                </Text>
+                <Text style={styles.imagePlaceholderSubtext}>
+                  Tap to {selectedMethod === 'camera' ? "capture" : "upload"}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <View style={styles.methodSelectorContainer}>
+            <TouchableOpacity
+              style={[
+                styles.methodButton,
+                selectedMethod === "camera" && styles.methodButtonActive,
+              ]}
+              onPress={() => setSelectedMethod("camera")}
+            >
+              <Ionicons
+                name="camera"
+                size={20}
+                color={selectedMethod === "camera" ? "#6366f1" : "#6b7280"}
+              />
+              <Text
+                style={[
+                  styles.methodButtonText,
+                  selectedMethod === "camera" && styles.methodButtonTextActive,
+                ]}
+              >
+                Camera
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.methodButton,
+                selectedMethod === "gallery" && styles.methodButtonActive,
+              ]}
+              onPress={() => setSelectedMethod("gallery")}
+            >
+              <Ionicons
+                name="images"
+                size={20}
+                color={selectedMethod === "gallery" ? "#6366f1" : "#6b7280"}
+              />
+              <Text
+                style={[
+                  styles.methodButtonText,
+                  selectedMethod === "gallery" && styles.methodButtonTextActive,
+                ]}
+              >
+                Gallery
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
 
         {/* Basic Information */}
@@ -401,19 +539,19 @@ const AddItemScreen = ({ navigation }) => {
         <TouchableOpacity
           style={[
             styles.saveButton,
-            (!formData.name || !formData.category || isCreating) &&
+            (!formData.name || !formData.category || isCreating || isUploading) &&
             styles.saveButtonDisabled,
           ]}
           onPress={handleSave}
-          disabled={!formData.name || !formData.category || isCreating}
+          disabled={!formData.name || !formData.category || isCreating || isUploading}
         >
-          {isCreating ? (
+          {isCreating || isUploading ? (
             <ActivityIndicator size="small" color="white" />
           ) : (
             <Ionicons name="checkmark-circle" size={20} color="white" />
           )}
           <Text style={styles.saveButtonText}>
-            {isCreating ? "Adding..." : "Add to Wardrobe"}
+            {isCreating || isUploading ? "Adding..." : "Add to Wardrobe"}
           </Text>
         </TouchableOpacity>
       </View>

@@ -14,6 +14,10 @@ const wardrobeItemSchema = new mongoose.Schema(
       minlength: [1, "Item name must be at least 1 character"],
       maxlength: [100, "Item name cannot exceed 100 characters"],
     },
+    imageUrl: {
+      type: String,
+      trim: true,
+    },
     brand: {
       type: String,
       trim: true,

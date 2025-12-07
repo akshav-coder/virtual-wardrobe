@@ -29,6 +29,7 @@ export const imageApi = api.injectEndpoints({
         url: "image/",
         method: "POST",
         body: formData,
+        formData: true, // Hint for RTK Query/fetch to handle FormData
       }),
       invalidatesTags: ["Image"],
     }),
